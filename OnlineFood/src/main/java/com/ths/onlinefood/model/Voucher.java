@@ -31,6 +31,8 @@ public class Voucher {
     
     private String moTa;
 
+    private int daSuDung; 
+    
     public enum LoaiVoucher {
         PHAN_TRAM,
         TIEN_MAT

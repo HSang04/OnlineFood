@@ -1,5 +1,6 @@
 package com.ths.onlinefood.model;
 
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,21 +12,21 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "nguoi_dung")
-public class NguoiDung {
+@Table(name = "danh_gia_nha_hang")
+public class DanhGiaNhaHang {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String hoTen;
-    private String email;
-    private String matKhau;
-    private String soDienThoai;
-    private String diaChi;
+    @ManyToOne
+    @JoinColumn(name = "id_nguoi_dung", nullable = false)
+    private NguoiDung nguoiDung;
 
-    @Enumerated(EnumType.STRING)
-    private USER_ROLE vaiTro;
+    @Column(nullable = false)
+    private int soSao;
 
-    private LocalDateTime ngayTao;
+    private String noiDung;
+
+    private LocalDateTime thoiGianDanhGia;
 }
