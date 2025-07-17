@@ -29,7 +29,8 @@ public class AppConfig {
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/auth/**").permitAll()
                  .requestMatchers(HttpMethod.POST, "/api/nguoi-dung").permitAll()
-                .requestMatchers("/api/admin/**").hasAnyRole("ADMIN", "QUANLY")
+                 .requestMatchers("/api/nguoi-dung/**").hasAnyAuthority("ADMIN", "QUANLY")
+                .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "QUANLY")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )
