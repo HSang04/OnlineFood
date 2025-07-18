@@ -16,7 +16,7 @@ public class MonAn {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String tenMon;
+    private String tenMonAn;
 
     private String moTa;
 
