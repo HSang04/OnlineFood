@@ -13,34 +13,34 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DanhMucController {
 
-    private final DanhMucService service;
+    private final DanhMucService danhMucService;
 
     @GetMapping
     public List<DanhMuc> getAll() {
-        return service.getAll();
+        return danhMucService.getAll();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<DanhMuc> getById(@PathVariable Long id) {
-        return service.getById(id)
+        return danhMucService.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public DanhMuc create(@RequestBody DanhMuc dm) {
-        return service.save(dm);
+        return danhMucService.save(dm);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<DanhMuc> update(@PathVariable Long id, @RequestBody DanhMuc dm) {
-        return service.update(id, dm)
+        return danhMucService.update(id, dm)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        return service.delete(id) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+        return danhMucService.delete(id) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
 }

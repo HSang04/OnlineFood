@@ -14,34 +14,34 @@ import java.util.List;
 @RequiredArgsConstructor
 public class DonHangController {
 
-    private final DonHangService service;
+    private final DonHangService donHangService;
 
     @GetMapping
     public List<DonHang> getAll() {
-        return service.getAll();
+        return donHangService.getAll();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<DonHang> getById(@PathVariable Long id) {
-        return service.getById(id)
+        return donHangService.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public DonHang create(@RequestBody DonHang donHang) {
-        return service.create(donHang);
+        return donHangService.create(donHang);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<DonHang> update(@PathVariable Long id, @RequestBody DonHang donHang) {
-        DonHang updated = service.update(id, donHang);
+        DonHang updated = donHangService.update(id, donHang);
         return updated == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(updated);
     }
 
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        return service.delete(id) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+        return donHangService.delete(id) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
 }

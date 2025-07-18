@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class NguoiDung {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) //Type.UUID sinh random id k trung lap
     private Long id;
 
     private String hoTen;
