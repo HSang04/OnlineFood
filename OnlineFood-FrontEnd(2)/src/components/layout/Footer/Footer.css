@@ -1,0 +1,13 @@
+.custom-footer {
+  background-color: #87CEFA; 
+  color: #000;
+}
+
+.footer-link {
+  color: #003366;
+  text-decoration: none;
+}
+
+.footer-link:hover {
+  text-decoration: underline;
+}
