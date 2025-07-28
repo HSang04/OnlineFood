@@ -7,6 +7,7 @@ import com.ths.onlinefood.repository.NguoiDungRepository;
 import com.ths.onlinefood.request.RequestLogin;
 import com.ths.onlinefood.response.AuthResponse;
 import com.ths.onlinefood.service.CustomerUserDetailsService;
+import java.time.LocalDateTime;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,16 +48,20 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> createUserHandler(@RequestBody NguoiDung user) throws Exception {
         Optional<NguoiDung> existingUser = nguoiDungRepository.findByEmail(user.getEmail());
-
-        if (existingUser != null) {
+        if (existingUser.isPresent()) {
             throw new Exception("Email đã được sử dụng.");
         }
 
-        NguoiDung newUser = new NguoiDung();
+
+       NguoiDung newUser = new NguoiDung();
         newUser.setEmail(user.getEmail());
         newUser.setHoTen(user.getHoTen());
-        newUser.setVaiTro(user.getVaiTro()); // USER_ROLE enum
+        newUser.setVaiTro(user.getVaiTro());
         newUser.setMatKhau(passwordEncoder.encode(user.getMatKhau()));
+        newUser.setSoDienThoai(user.getSoDienThoai());
+        newUser.setDiaChi(user.getDiaChi());
+        newUser.setNgayTao(LocalDateTime.now());
+
 
         NguoiDung savedUser = nguoiDungRepository.save(newUser);
 
@@ -85,15 +90,21 @@ public class AuthController {
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         String role = authorities.isEmpty() ? null : authorities.iterator().next().getAuthority();
 
+        
+        NguoiDung nguoiDung = nguoiDungRepository.findByEmail(email)
+            .orElseThrow(() -> new Exception("Không tìm thấy người dùng"));
+
         String jwt = jwtProvider.generateToken(authentication);
 
         AuthResponse authResponse = new AuthResponse();
         authResponse.setJwt(jwt);
+        authResponse.setId(nguoiDung.getId());
         authResponse.setMessage("Đăng nhập thành công");
         authResponse.setRole(USER_ROLE.valueOf(role));
 
         return new ResponseEntity<>(authResponse, HttpStatus.OK);
     }
+
 
     private Authentication authenticate(String email, String password) {
         UserDetails userDetails = customerUserDetailsService.loadUserByUsername(email);

@@ -11,6 +11,7 @@ import lombok.Data;
 @Data
 public class AuthResponse {
 
+    private Long id;
     private String jwt;
 
     private String message;
