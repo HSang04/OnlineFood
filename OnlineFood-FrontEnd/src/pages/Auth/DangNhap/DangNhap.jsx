@@ -1,37 +1,22 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from "../../../config/API";
-import { endpoints } from "../../../config/API";
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import './DangNhap.css';
 
 const DangNhap = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     matKhau: ''
   });
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.email) {
-      newErrors.email = 'Email không được để trống';
+    if (!formData.username) {
+      newErrors.username = 'Tài khoản không được để trống';
     }
 
     if (!formData.matKhau) {
@@ -43,120 +28,72 @@ const DangNhap = () => {
     return newErrors;
   };
 
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const validationErrors = validateForm();
 
-    const newErrors = validateForm();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      const response = await axios.post(endpoints.LOGIN, {
-        email: formData.email,
+      const response = await axios.post('http://localhost:8080/auth/login', {
+        username: formData.username,
         matKhau: formData.matKhau
       });
 
-      const data = response.data;
-
-      
-      localStorage.setItem("jwt", data.jwt);
-      localStorage.setItem("userRole", data.role);
-      localStorage.setItem("idNguoiDung", data.id);  
-      
-
-      alert(data.message || "Đăng nhập thành công!");
-
-      if (data.role === "ADMIN") {
-        navigate("/admin");
+      if (response.data.jwt) {
+        localStorage.setItem('jwt', response.data.jwt);
+        localStorage.setItem('idNguoiDung', response.data.id);           
+        localStorage.setItem('vaiTro', response.data.role); 
+        navigate('/');
       } else {
-        navigate("/");
+        alert('Sai tài khoản hoặc mật khẩu!');
       }
     } catch (error) {
-      console.error("Login error:", error);
-      if (error.response?.data?.message) {
-        setErrors({ submit: error.response.data.message });
-      } else {
-        setErrors({ submit: "Có lỗi xảy ra. Vui lòng thử lại." });
-      }
-    } finally {
-      setIsLoading(false);
+      alert('Lỗi đăng nhập: ' + (error.response?.data?.message || 'Không thể kết nối máy chủ'));
     }
   };
 
   return (
-    <div className="dangnhap-container">
-      <div className="dangnhap-wrapper">
-        <div className="dangnhap-card">
-          <div className="dangnhap-header">
-            <h2>Đăng Nhập</h2>
-            <p>Chào mừng bạn quay trở lại!</p>
-          </div>
+    <div className="login-container">
+      <form className="login-form" onSubmit={handleSubmit}>
+        <h2>Đăng nhập</h2>
 
-          <form onSubmit={handleSubmit} className="dangnhap-form">
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className={errors.email ? 'error' : ''}
-                placeholder="Nhập email của bạn"
-              />
-              {errors.email && <span className="error-message">{errors.email}</span>}
-            </div>
+        <label htmlFor="username">Tài khoản</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          value={formData.username}
+          onChange={handleChange}
+          className={errors.username ? 'error' : ''}
+          placeholder="Nhập tên tài khoản"
+        />
+        {errors.username && <span className="error-message">{errors.username}</span>}
 
-            <div className="form-group">
-              <label htmlFor="matKhau">Mật khẩu</label>
-              <input
-                type="password"
-                id="matKhau"
-                name="matKhau"
-                value={formData.matKhau}
-                onChange={handleChange}
-                className={errors.matKhau ? 'error' : ''}
-                placeholder="Nhập mật khẩu"
-              />
-              {errors.matKhau && <span className="error-message">{errors.matKhau}</span>}
-            </div>
+        <label htmlFor="matKhau">Mật khẩu</label>
+        <input
+          type="password"
+          id="matKhau"
+          name="matKhau"
+          value={formData.matKhau}
+          onChange={handleChange}
+          className={errors.matKhau ? 'error' : ''}
+          placeholder="Nhập mật khẩu"
+        />
+        {errors.matKhau && <span className="error-message">{errors.matKhau}</span>}
 
-            <div className="form-options">
-              <label className="checkbox-container">
-                <input type="checkbox" />
-                <span className="checkmark"></span>
-                Ghi nhớ đăng nhập
-              </label>
-              <Link to="/quen-mat-khau" className="forgot-password">
-                Quên mật khẩu?
-              </Link>
-            </div>
-
-            {errors.submit && (
-              <div className="error-message submit-error">{errors.submit}</div>
-            )}
-
-            <button
-              type="submit"
-              className="dangnhap-button"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Đang đăng nhập...' : 'Đăng Nhập'}
-            </button>
-          </form>
-
-          <div className="dangnhap-footer">
-            <p>
-              Chưa có tài khoản?
-              <Link to="/signup" className="signup-link"> Đăng ký ngay</Link>
-            </p>
-          </div>
-        </div>
-      </div>
+        <button type="submit">Đăng nhập</button>
+      </form>
     </div>
   );
 };

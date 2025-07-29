@@ -47,6 +47,12 @@ public class AuthController {
 
     @PostMapping("/signup")
     public ResponseEntity<AuthResponse> createUserHandler(@RequestBody NguoiDung user) throws Exception {
+        
+         Optional<NguoiDung> existingUsername = nguoiDungRepository.findByUsername(user.getUsername());
+        if (existingUsername.isPresent()) {
+            throw new Exception("Username đã được sử dụng.");
+        }
+        
         Optional<NguoiDung> existingUser = nguoiDungRepository.findByEmail(user.getEmail());
         if (existingUser.isPresent()) {
             throw new Exception("Email đã được sử dụng.");
@@ -54,6 +60,7 @@ public class AuthController {
 
 
        NguoiDung newUser = new NguoiDung();
+        newUser.setUsername(user.getUsername());
         newUser.setEmail(user.getEmail());
         newUser.setHoTen(user.getHoTen());
         newUser.setVaiTro(user.getVaiTro());
@@ -66,7 +73,7 @@ public class AuthController {
         NguoiDung savedUser = nguoiDungRepository.save(newUser);
 
         // Tạo JWT
-        UserDetails userDetails = customerUserDetailsService.loadUserByUsername(savedUser.getEmail());
+          UserDetails userDetails = customerUserDetailsService.loadUserByUsername(savedUser.getUsername());
         UsernamePasswordAuthenticationToken authToken =
                 new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authToken);
@@ -81,17 +88,18 @@ public class AuthController {
         return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
     }
 
-    @PostMapping("/login")
+   @PostMapping("/login")
     public ResponseEntity<AuthResponse> signin(@RequestBody RequestLogin requestLogin) throws Exception {
-        String email = requestLogin.getEmail();
+        System.out.println("Username: " + requestLogin.getUsername());
+        System.out.println("Password: " + requestLogin.getMatKhau());
+        String username = requestLogin.getUsername(); 
         String rawPassword = requestLogin.getMatKhau();
 
-        Authentication authentication = authenticate(email, rawPassword);
+        Authentication authentication = authenticate(username, rawPassword);
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         String role = authorities.isEmpty() ? null : authorities.iterator().next().getAuthority();
 
-        
-        NguoiDung nguoiDung = nguoiDungRepository.findByEmail(email)
+        NguoiDung nguoiDung = nguoiDungRepository.findByUsername(username) 
             .orElseThrow(() -> new Exception("Không tìm thấy người dùng"));
 
         String jwt = jwtProvider.generateToken(authentication);
@@ -106,8 +114,9 @@ public class AuthController {
     }
 
 
-    private Authentication authenticate(String email, String password) {
-        UserDetails userDetails = customerUserDetailsService.loadUserByUsername(email);
+
+    private Authentication authenticate(String username, String password) {
+        UserDetails userDetails = customerUserDetailsService.loadUserByUsername(username);
         if (userDetails == null) {
             throw new BadCredentialsException("Email không tồn tại.");
         }

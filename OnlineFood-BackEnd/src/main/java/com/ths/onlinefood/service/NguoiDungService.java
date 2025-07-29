@@ -35,7 +35,7 @@ public class NguoiDungService {
         return nguoiDungRepository.findById(id)
                 .map(nd -> {
                     nd.setHoTen(nguoiDungMoi.getHoTen());
-                    nd.setEmail(nguoiDungMoi.getEmail());
+//                    nd.setEmail(nguoiDungMoi.getEmail());
                     nd.setSoDienThoai(nguoiDungMoi.getSoDienThoai());
                     nd.setDiaChi(nguoiDungMoi.getDiaChi());
                     return nguoiDungRepository.save(nd);

@@ -18,8 +18,14 @@ public class NguoiDung {
     @GeneratedValue(strategy = GenerationType.IDENTITY) //Type.UUID sinh random id k trung lap
     private Long id;
 
+    @Column(unique = true, nullable = false)
+    private String username;
+   
     private String hoTen;
+    
+    @Column(unique = true, nullable = false)
     private String email;
+    
     private String matKhau;
     private String soDienThoai;
     private String diaChi;

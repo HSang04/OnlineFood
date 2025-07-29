@@ -7,6 +7,6 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface NguoiDungRepository extends JpaRepository<NguoiDung, Long> {
-    // tim theo email, sdt
+     Optional<NguoiDung> findByUsername(String username);
      Optional<NguoiDung> findByEmail(String email);
 }

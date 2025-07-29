@@ -23,12 +23,12 @@ public class CustomerUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        NguoiDung user = nguoiDungRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với email: " + email));
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        NguoiDung user = nguoiDungRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng với username: " + username));
 
         return new org.springframework.security.core.userdetails.User(
-                user.getEmail(),
+                user.getUsername(), 
                 user.getMatKhau(),
                 List.of(new SimpleGrantedAuthority(user.getVaiTro().name()))
         );
