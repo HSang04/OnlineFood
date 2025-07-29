@@ -27,9 +27,10 @@ public class AppConfig {
         http
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/auth/**").permitAll()
-                 .requestMatchers(HttpMethod.POST, "/api/nguoi-dung").permitAll()
-                 .requestMatchers("/api/nguoi-dung/**").hasAnyAuthority("ADMIN", "QUANLY")
+                .requestMatchers("/auth/signup", "/auth/login").permitAll()
+                .requestMatchers("/auth/signup-by-admin").hasAnyAuthority("ADMIN", "QUANLY")
+//                .requestMatchers(HttpMethod.POST, "/api/nguoi-dung").permitAll() 
+//                .requestMatchers("/api/nguoi-dung/**").hasAnyAuthority("ADMIN", "QUANLY")
                 .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "QUANLY")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()

@@ -63,7 +63,9 @@ public class AuthController {
         newUser.setUsername(user.getUsername());
         newUser.setEmail(user.getEmail());
         newUser.setHoTen(user.getHoTen());
-        newUser.setVaiTro(user.getVaiTro());
+//        newUser.setVaiTro(user.getVaiTro());
+        newUser.setVaiTro(USER_ROLE.KHACHHANG);
+        
         newUser.setMatKhau(passwordEncoder.encode(user.getMatKhau()));
         newUser.setSoDienThoai(user.getSoDienThoai());
         newUser.setDiaChi(user.getDiaChi());
@@ -87,6 +89,47 @@ public class AuthController {
 
         return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
     }
+    
+    @PostMapping("/signup-by-admin")
+    public ResponseEntity<?> createUserByAdmin(@RequestBody NguoiDung user) throws Exception {
+    Optional<NguoiDung> existingUsername = nguoiDungRepository.findByUsername(user.getUsername());
+        if (existingUsername.isPresent()) {
+            throw new Exception("Username đã được sử dụng.");
+        }
+        
+        Optional<NguoiDung> existingUser = nguoiDungRepository.findByEmail(user.getEmail());
+        if (existingUser.isPresent()) {
+            throw new Exception("Email đã được sử dụng.");
+        }
+
+       NguoiDung newUser = new NguoiDung();
+        newUser.setUsername(user.getUsername());
+        newUser.setEmail(user.getEmail());
+        newUser.setHoTen(user.getHoTen());
+        newUser.setVaiTro(user.getVaiTro());
+
+        newUser.setMatKhau(passwordEncoder.encode(user.getMatKhau()));
+        newUser.setSoDienThoai(user.getSoDienThoai());
+        newUser.setDiaChi(user.getDiaChi());
+        newUser.setNgayTao(LocalDateTime.now());
+        NguoiDung savedUser = nguoiDungRepository.save(newUser);
+
+        // Tạo JWT
+          UserDetails userDetails = customerUserDetailsService.loadUserByUsername(savedUser.getUsername());
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+
+        String jwt = jwtProvider.generateToken(authToken);
+
+        AuthResponse authResponse = new AuthResponse();
+        authResponse.setJwt(jwt);
+        authResponse.setMessage("Đăng ký thành công");
+        authResponse.setRole(savedUser.getVaiTro());
+
+        return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
+    }
+
 
    @PostMapping("/login")
     public ResponseEntity<AuthResponse> signin(@RequestBody RequestLogin requestLogin) throws Exception {
