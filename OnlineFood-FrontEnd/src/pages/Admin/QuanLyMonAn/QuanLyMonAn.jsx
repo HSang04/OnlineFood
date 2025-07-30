@@ -6,6 +6,9 @@ import './QuanLyMonAn.css';
 const QuanLyMonAn = () => {
   const [dsMonAn, setDsMonAn] = useState([]);
   const [keyword, setKeyword] = useState("");
+  const [sortField, setSortField] = useState("");
+  const [sortDirection, setSortDirection] = useState("asc");
+
   const navigate = useNavigate();
 
   const fetchData = async () => {
@@ -41,6 +44,23 @@ const QuanLyMonAn = () => {
     }
   };
 
+  const handleSort = (field) => {
+    const newDirection = sortField === field && sortDirection === "asc" ? "desc" : "asc";
+    setSortField(field);
+    setSortDirection(newDirection);
+
+    const sorted = [...dsMonAn].sort((a, b) => {
+      const aValue = field === "danhMuc" ? a.danhMuc?.tenDanhMuc || "" : a[field];
+      const bValue = field === "danhMuc" ? b.danhMuc?.tenDanhMuc || "" : b[field];
+
+      if (aValue < bValue) return newDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return newDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    setDsMonAn(sorted);
+  };
+
   return (
     <div className="monan-container">
       <h2 className="title">Quản lý món ăn</h2>
@@ -51,14 +71,25 @@ const QuanLyMonAn = () => {
           placeholder="Tìm kiếm món ăn..."
           className="search-input"
         />
-        <button onClick={timKiem} className="btn btn-search">Tìm</button>
-        <button onClick={() => navigate("/them-sua-mon-an")} className="btn btn-add">Thêm món ăn</button>
+        <button onClick={timKiem} className="btn-search">Tìm</button>
+        <button onClick={() => navigate("/them-sua-mon-an")} className="btn-add">Thêm món ăn</button>
       </div>
+
+      <div className="sort-buttons">
+        <button onClick={() => handleSort("gia")} className="btn-sort">
+          Sắp xếp theo Giá {sortField === "gia" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+        </button>
+        <button onClick={() => handleSort("danhMuc")} className="btn-sort">
+          Sắp xếp theo Danh mục {sortField === "danhMuc" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+        </button>
+      </div>
+
       <table className="monan-table">
         <thead>
           <tr>
             <th>ID</th>
             <th>Tên món</th>
+            <th>Danh mục</th>
             <th>Ảnh</th>
             <th>Giá</th>
             <th>Mô tả</th>
@@ -70,6 +101,7 @@ const QuanLyMonAn = () => {
             <tr key={mon.id}>
               <td>{mon.id}</td>
               <td>{mon.tenMonAn}</td>
+              <td>{mon.danhMuc?.tenDanhMuc || "Không có"}</td>
               <td>
                 {mon.hinhAnhMonAns?.length > 0 ? (
                   <img
@@ -86,13 +118,13 @@ const QuanLyMonAn = () => {
               <td>
                 <button
                   onClick={() => navigate(`/them-sua-mon-an/${mon.id}`)}
-                  className="btn btn-edit"
+                  className="btn-edit"
                 >
                   Sửa
                 </button>
                 <button
                   onClick={() => xoaMonAn(mon.id)}
-                  className="btn btn-delete"
+                  className="btn-delete"
                 >
                   Xóa
                 </button>

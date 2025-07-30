@@ -1,5 +1,6 @@
 package com.ths.onlinefood.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -22,6 +23,6 @@ public class HinhAnhMonAn {
 
    @ManyToOne
     @JoinColumn(name = "id_mon_an")
-    @JsonIgnore
+    @JsonBackReference
     private MonAn monAn;
 }

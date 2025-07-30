@@ -1,6 +1,7 @@
 package com.ths.onlinefood.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ths.onlinefood.dto.MonAnDTO;
 import com.ths.onlinefood.model.MonAn;
 import com.ths.onlinefood.service.MonAnService;
 import lombok.RequiredArgsConstructor;
@@ -50,11 +51,22 @@ public ResponseEntity<MonAn> getById(@PathVariable Long id) {
         }
     }
 
-    @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<MonAn> update(@PathVariable Long id, @RequestBody MonAn monAn) {
-        MonAn updated = monAnService.update(id, monAn);
-        return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
-    }
+ @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<MonAn> update(
+    @PathVariable Long id,
+    @RequestPart("monAn") String monAnJson,
+    @RequestPart(value = "images", required = false) MultipartFile[] imageFiles) {
+  try {
+      ObjectMapper objectMapper = new ObjectMapper();
+      MonAnDTO dto = objectMapper.readValue(monAnJson, MonAnDTO.class);
+      MonAn updated = monAnService.update(id, dto, imageFiles);
+      return ResponseEntity.ok(updated);
+  } catch (Exception e) {
+      e.printStackTrace();
+      return ResponseEntity.badRequest().build();
+  }
+}
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {

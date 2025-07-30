@@ -2,6 +2,7 @@ package com.ths.onlinefood.service;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import com.ths.onlinefood.dto.MonAnDTO;
 import com.ths.onlinefood.model.HinhAnhMonAn;
 import com.ths.onlinefood.model.MonAn;
 import com.ths.onlinefood.repository.HinhAnhMonAnRepository;
@@ -50,16 +51,49 @@ public class MonAnService {
         return saved;
     }
 
-    public MonAn update(Long id, MonAn monAn) {
-        return monAnRepository.findById(id)
-                .map(existing -> {
-                    existing.setTenMonAn(monAn.getTenMonAn());
-                    existing.setMoTa(monAn.getMoTa());
-                    existing.setGia(monAn.getGia());
-                    existing.setDanhMuc(monAn.getDanhMuc());
-                    return monAnRepository.save(existing);
-                }).orElse(null);
+public MonAn update(Long id, MonAnDTO dto, MultipartFile[] imageFiles) throws IOException {
+    Optional<MonAn> optional = monAnRepository.findById(id);
+    if (optional.isEmpty()) return null;
+
+    MonAn existing = optional.get();
+
+    // Cập nhật thông tin cơ bản từ DTO
+    existing.setTenMonAn(dto.getTenMonAn());
+    existing.setGia(dto.getGia());
+    existing.setMoTa(dto.getMoTa());
+    existing.setDanhMuc(dto.getDanhMuc());
+
+    // Danh sách ảnh cần giữ lại
+    List<Long> keptIds = dto.getKeptImageIds() != null ? dto.getKeptImageIds() : List.of();
+
+    // Lấy danh sách ảnh cũ trong DB
+    List<HinhAnhMonAn> oldImages = hinhAnhMonAnRepository.findByMonAnId(id);
+
+    // Xóa các ảnh không nằm trong keptImageIds
+    for (HinhAnhMonAn img : oldImages) {
+        if (!keptIds.contains(img.getId())) {
+            hinhAnhMonAnRepository.delete(img);
+            // Nếu cần xóa cả ảnh trên Cloudinary thì thêm ở đây
+        }
     }
+
+    // Xử lý ảnh mới
+    if (imageFiles != null && imageFiles.length > 0) {
+        for (MultipartFile file : imageFiles) {
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+            String url = (String) uploadResult.get("secure_url");
+
+            HinhAnhMonAn newImage = new HinhAnhMonAn();
+            newImage.setMonAn(existing);
+            newImage.setDuongDan(url);
+            hinhAnhMonAnRepository.save(newImage);
+        }
+    }
+
+    return monAnRepository.save(existing);
+}
+
+
 
     public boolean delete(Long id) {
         if (monAnRepository.existsById(id)) {
