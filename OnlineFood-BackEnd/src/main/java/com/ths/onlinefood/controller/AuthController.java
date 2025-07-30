@@ -21,7 +21,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Optional;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 @RestController
 @RequestMapping("/auth")
@@ -131,30 +133,39 @@ public class AuthController {
     }
 
 
-   @PostMapping("/login")
-    public ResponseEntity<AuthResponse> signin(@RequestBody RequestLogin requestLogin) throws Exception {
-        System.out.println("Username: " + requestLogin.getUsername());
-        System.out.println("Password: " + requestLogin.getMatKhau());
-        String username = requestLogin.getUsername(); 
-        String rawPassword = requestLogin.getMatKhau();
+  @PostMapping("/login")
+    public ResponseEntity<?> signin(@RequestBody RequestLogin requestLogin) {
+    try {
+        Authentication authentication = authenticate(
+            requestLogin.getUsername(), 
+            requestLogin.getMatKhau()
+        );
 
-        Authentication authentication = authenticate(username, rawPassword);
+        NguoiDung nguoiDung = nguoiDungRepository.findByUsername(requestLogin.getUsername())
+            .orElseThrow(() -> new UsernameNotFoundException("Không tìm thấy người dùng"));
+
+        String jwt = jwtProvider.generateToken(authentication);
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         String role = authorities.isEmpty() ? null : authorities.iterator().next().getAuthority();
 
-        NguoiDung nguoiDung = nguoiDungRepository.findByUsername(username) 
-            .orElseThrow(() -> new Exception("Không tìm thấy người dùng"));
+        AuthResponse response = new AuthResponse();
+        response.setJwt(jwt);
+        response.setId(nguoiDung.getId());
+        response.setRole(USER_ROLE.valueOf(role));
+        response.setMessage("Đăng nhập thành công");
 
-        String jwt = jwtProvider.generateToken(authentication);
+        return ResponseEntity.ok(response);
 
-        AuthResponse authResponse = new AuthResponse();
-        authResponse.setJwt(jwt);
-        authResponse.setId(nguoiDung.getId());
-        authResponse.setMessage("Đăng nhập thành công");
-        authResponse.setRole(USER_ROLE.valueOf(role));
-
-        return new ResponseEntity<>(authResponse, HttpStatus.OK);
+    } catch (BadCredentialsException | UsernameNotFoundException ex) {
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(Collections.singletonMap("message", "Tài khoản hoặc mật khẩu không chính xác."));
+    } catch (Exception e) {
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(Collections.singletonMap("message", "Lỗi hệ thống"));
     }
+}
 
 
 

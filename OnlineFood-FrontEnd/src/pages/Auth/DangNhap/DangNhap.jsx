@@ -26,27 +26,30 @@ const DangNhap = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    try {
-      const response = await axios.post('http://localhost:8080/auth/login', formData);
-      if (response.data.jwt) {
-        localStorage.setItem('jwt', response.data.jwt);
-        localStorage.setItem('idNguoiDung', response.data.id);
-        localStorage.setItem('vaiTro', response.data.role);
-        navigate('/');
-      } else {
-        alert('Sai tài khoản hoặc mật khẩu!');
+      e.preventDefault();
+      const validationErrors = validateForm();
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        return;
       }
-    } catch (error) {
-      alert('Lỗi đăng nhập: ' + (error.response?.data?.message || 'Không thể kết nối máy chủ'));
-    }
-  };
+
+      try {
+        const response = await axios.post('http://localhost:8080/auth/login', formData);
+        if (response.data.jwt) {
+          localStorage.setItem('jwt', response.data.jwt);
+          localStorage.setItem('idNguoiDung', response.data.id);
+          localStorage.setItem('vaiTro', response.data.role);
+          navigate('/');
+        }
+      } catch (error) {
+        const errorMessage =
+          error.response?.data?.message ||
+          (error.response?.status === 401
+            ? 'Tài khoản hoặc mật khẩu không đúng'
+            : 'Lỗi kết nối máy chủ');
+        alert(errorMessage);
+      }
+    };
 
   return (
     <div className="login-container">
