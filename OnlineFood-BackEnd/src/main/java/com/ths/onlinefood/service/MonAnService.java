@@ -1,28 +1,28 @@
 package com.ths.onlinefood.service;
 
 import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
+import com.ths.onlinefood.model.HinhAnhMonAn;
 import com.ths.onlinefood.model.MonAn;
+import com.ths.onlinefood.repository.HinhAnhMonAnRepository;
 import com.ths.onlinefood.repository.MonAnRepository;
-import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
 public class MonAnService {
-    
-    @Autowired
+
     private final MonAnRepository monAnRepository;
-     @Autowired
-    private Cloudinary cloudinary;
-    
-    
+    private final HinhAnhMonAnRepository hinhAnhMonAnRepository;
+    private final Cloudinary cloudinary;
+
     public List<MonAn> getAll() {
         return monAnRepository.findAll();
     }
@@ -31,37 +31,70 @@ public class MonAnService {
         return monAnRepository.findById(id);
     }
 
-   public MonAn create(MonAn monAn, MultipartFile imageFile) {
-    try {
-        Map uploadResult = cloudinary.uploader().upload(imageFile.getBytes(), Map.of());
-        String imageUrl = (String) uploadResult.get("secure_url");
-        monAn.setHinhAnh(imageUrl);
-    } catch (IOException e) {
-        throw new RuntimeException("Upload thất bại: " + e.getMessage());
+    public MonAn create(MonAn monAn, MultipartFile[] imageFiles) throws IOException {
+        MonAn saved = monAnRepository.save(monAn);
+
+        if (imageFiles != null) {
+            for (MultipartFile file : imageFiles) {
+                Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+                String url = (String) uploadResult.get("secure_url");
+
+                HinhAnhMonAn hinhAnh = new HinhAnhMonAn();
+                hinhAnh.setMonAn(saved);
+                hinhAnh.setDuongDan(url);
+
+                hinhAnhMonAnRepository.save(hinhAnh);
+            }
+        }
+
+        return saved;
     }
 
-    return monAnRepository.save(monAn);
-}
-
-    public MonAn update(Long id, MonAn newMonAn) {
-        return monAnRepository.findById(id).map(ma -> {
-            ma.setTenMonAn(newMonAn.getTenMonAn());
-            ma.setMoTa(newMonAn.getMoTa());
-            ma.setHinhAnh(newMonAn.getHinhAnh());
-            ma.setGia(newMonAn.getGia());
-            ma.setTrangThai(newMonAn.getTrangThai());
-            ma.setDanhMuc(newMonAn.getDanhMuc());
-            return monAnRepository.save(ma);
-        }).orElse(null);
+    public MonAn update(Long id, MonAn monAn) {
+        return monAnRepository.findById(id)
+                .map(existing -> {
+                    existing.setTenMonAn(monAn.getTenMonAn());
+                    existing.setMoTa(monAn.getMoTa());
+                    existing.setGia(monAn.getGia());
+                    existing.setDanhMuc(monAn.getDanhMuc());
+                    return monAnRepository.save(existing);
+                }).orElse(null);
     }
 
     public boolean delete(Long id) {
-        if (!monAnRepository.existsById(id)) return false;
-        monAnRepository.deleteById(id);
-        return true;
+        if (monAnRepository.existsById(id)) {
+            // Xóa ảnh trước
+            List<HinhAnhMonAn> images = hinhAnhMonAnRepository.findByMonAnId(id);
+            hinhAnhMonAnRepository.deleteAll(images);
+
+            monAnRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 
     public List<MonAn> searchByTenMon(String keyword) {
         return monAnRepository.findByTenMonAnContainingIgnoreCase(keyword);
+    }
+
+    public Optional<MonAn> getImagesByMonAnId(Long monAnId) {
+        return monAnRepository.findWithHinhAnhMonAnsById(monAnId);
+    }
+
+    public HinhAnhMonAn saveImage(Long monAnId, MultipartFile imageFile) throws IOException {
+        Optional<MonAn> monAn = monAnRepository.findById(monAnId);
+        if (monAn.isEmpty()) return null;
+
+        Map uploadResult = cloudinary.uploader().upload(imageFile.getBytes(), ObjectUtils.emptyMap());
+        String url = (String) uploadResult.get("secure_url");
+
+        HinhAnhMonAn img = new HinhAnhMonAn();
+        img.setMonAn(monAn.get());
+        img.setDuongDan(url);
+        return hinhAnhMonAnRepository.save(img);
+    }
+
+    public void deleteImage(Long imageId) {
+        hinhAnhMonAnRepository.deleteById(imageId);
     }
 }

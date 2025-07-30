@@ -1,19 +1,15 @@
 package com.ths.onlinefood.controller;
 
-import com.cloudinary.Cloudinary;
-import com.cloudinary.utils.ObjectUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ths.onlinefood.model.MonAn;
 import com.ths.onlinefood.service.MonAnService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.Map;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/mon-an")
@@ -27,36 +23,34 @@ public class MonAnController {
         return monAnService.getAll();
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<MonAn> getById(@PathVariable Long id) {
-        return monAnService.getById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
+   @GetMapping("/{id}")
+public ResponseEntity<MonAn> getById(@PathVariable Long id) {
+    return monAnService.getById(id)
+            .map(monAn -> {
+          
+                monAn.getHinhAnhMonAns().size();
+                return ResponseEntity.ok(monAn);
+            })
+            .orElse(ResponseEntity.notFound().build());
+}
 
-//   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<MonAn> create(
-//        @RequestPart("monAn") MonAn monAn,
-//        @RequestPart("image") MultipartFile imageFile) {
-//
-//    return ResponseEntity.ok(monAnService.create(monAn, imageFile));
-//}
-   @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<MonAn> create(
             @RequestPart("monAn") String monAnJson,
-            @RequestPart("image") MultipartFile imageFile) {
+            @RequestPart(value = "images", required = false) MultipartFile[] imageFiles) {
         try {
-            //System.out.println("JSON: " + monAnJson); 
+        
             ObjectMapper objectMapper = new ObjectMapper();
             MonAn monAn = objectMapper.readValue(monAnJson, MonAn.class);
-            return ResponseEntity.ok(monAnService.create(monAn, imageFile));
+            return ResponseEntity.ok(monAnService.create(monAn, imageFiles));
         } catch (Exception e) {
-            e.printStackTrace(); 
+            e.printStackTrace();
             return ResponseEntity.badRequest().build();
         }
     }
 
-    @PutMapping("/{id}")
+    @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<MonAn> update(@PathVariable Long id, @RequestBody MonAn monAn) {
         MonAn updated = monAnService.update(id, monAn);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();

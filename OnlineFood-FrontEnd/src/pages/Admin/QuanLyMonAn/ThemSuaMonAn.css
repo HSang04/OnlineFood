@@ -1,0 +1,90 @@
+.them-sua-mon-an {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.them-sua-mon-an h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.them-sua-mon-an form > div {
+  margin-bottom: 16px;
+}
+
+.them-sua-mon-an label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.them-sua-mon-an input[type="text"],
+.them-sua-mon-an input[type="number"],
+.them-sua-mon-an textarea,
+.them-sua-mon-an select {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.them-sua-mon-an textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.preview-image-wrapper {
+  position: relative;
+}
+
+.preview-image-wrapper img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.preview-image-wrapper button {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.them-sua-mon-an button[type="submit"] {
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.them-sua-mon-an button[type="submit"]:hover {
+  background-color: #0056b3;
+}

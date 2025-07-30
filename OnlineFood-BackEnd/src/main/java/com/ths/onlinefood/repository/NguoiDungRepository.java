@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository;
 public interface NguoiDungRepository extends JpaRepository<NguoiDung, Long> {
      Optional<NguoiDung> findByUsername(String username);
      Optional<NguoiDung> findByEmail(String email);
+     
 }

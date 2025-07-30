@@ -1,0 +1,87 @@
+.monan-container {
+  padding: 30px;
+  max-width: 1100px;
+  margin: auto;
+  background: #fff;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.search-bar {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  flex: 1;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 4px;
+}
+
+.btn-search {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-add {
+  background-color: #28a745;
+  color: white;
+  margin-left: auto;
+}
+
+.btn-edit {
+  background-color: #ffc107;
+  color: white;
+  margin-right: 5px;
+}
+
+.btn-delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.monan-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+.monan-table th,
+.monan-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+}
+
+.monan-table th {
+  background-color: #f8f9fa;
+}
+
+.monan-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  margin: auto;
+}
+
+.no-img {
+  font-style: italic;
+  color: #999;
+}

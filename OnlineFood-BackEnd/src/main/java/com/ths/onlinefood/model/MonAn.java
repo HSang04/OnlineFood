@@ -1,9 +1,12 @@
 package com.ths.onlinefood.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Entity
 @Data
@@ -20,8 +23,6 @@ public class MonAn {
 
     private String moTa;
 
-    private String hinhAnh;
-
     private double gia;
 
     private int trangThai;
@@ -29,4 +30,9 @@ public class MonAn {
     @ManyToOne
     @JoinColumn(name = "id_danh_muc")
     private DanhMuc danhMuc;
+
+    @OneToMany(mappedBy = "monAn", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private List<HinhAnhMonAn> hinhAnhMonAns;
+
 }
