@@ -1,242 +1,157 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useNavigate, Link } from 'react-router-dom';
 import './DangKy.css';
 
 const DangKy = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    hoTen: '',
-    email: '',
+    username: '',
     matKhau: '',
-    xacNhanMatKhau: '',
-    vaiTro: 'CUSTOMER' // Mặc định là CUSTOMER
+    email: '',
+    soDienThoai: '',
+    diaChi: '',
+    hoTen: ''
   });
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [acceptTerms, setAcceptTerms] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Xóa lỗi khi user bắt đầu nhập
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.hoTen.trim()) {
-      newErrors.hoTen = 'Họ tên không được để trống';
-    } else if (formData.hoTen.trim().length < 2) {
-      newErrors.hoTen = 'Họ tên phải có ít nhất 2 ký tự';
+    if (!formData.username) {
+      newErrors.username = 'Tên người dùng không được để trống';
     }
-
+    if (!formData.hoTen) {
+      newErrors.hoTen = 'Họ tên không được để trống';
+    }
     if (!formData.email) {
       newErrors.email = 'Email không được để trống';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email không hợp lệ';
     }
-
+    if (!formData.soDienThoai) {
+      newErrors.soDienThoai = 'Số điện thoại không được để trống';
+    }
+    if (!formData.diaChi) {
+      newErrors.diaChi = 'Địa chỉ không được để trống';
+    }
     if (!formData.matKhau) {
       newErrors.matKhau = 'Mật khẩu không được để trống';
     } else if (formData.matKhau.length < 6) {
       newErrors.matKhau = 'Mật khẩu phải có ít nhất 6 ký tự';
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.matKhau)) {
-      newErrors.matKhau = 'Mật khẩu phải có ít nhất 1 chữ hoa, 1 chữ thường và 1 số';
-    }
-
-    if (!formData.xacNhanMatKhau) {
-      newErrors.xacNhanMatKhau = 'Vui lòng xác nhận mật khẩu';
-    } else if (formData.matKhau !== formData.xacNhanMatKhau) {
-      newErrors.xacNhanMatKhau = 'Mật khẩu xác nhận không khớp';
-    }
-
-    if (!acceptTerms) {
-      newErrors.terms = 'Bạn phải đồng ý với điều khoản sử dụng';
     }
 
     return newErrors;
   };
 
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    const newErrors = validateForm();
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
-    setIsLoading(true);
-    
     try {
-      // Gọi API đăng ký - khớp với backend endpoint /auth/signup
-      const response = await fetch('/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          hoTen: formData.hoTen.trim(),
-          email: formData.email,
-          matKhau: formData.matKhau,
-          vaiTro: formData.vaiTro
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Lưu JWT token và thông tin user vào localStorage
-        localStorage.setItem('jwt', data.jwt);
-        localStorage.setItem('userRole', data.role);
-        localStorage.setItem('userEmail', formData.email);
-        
-        // Hiển thị thông báo thành công
-        alert(data.message || 'Đăng ký thành công!');
-        
-        // Chuyển hướng dựa trên role hoặc về trang chủ
-        if (data.role === 'ADMIN') {
-          navigate('/admin');
-        } else {
-          navigate('/');
-        }
-      } else {
-        const errorData = await response.json();
-        setErrors({ submit: errorData.message || 'Đăng ký thất bại' });
-      }
+      await axios.post('http://localhost:8080/auth/signup', formData);
+      alert('Đăng ký thành công! Hãy đăng nhập.');
+      navigate('/login');
     } catch (error) {
-      console.error('Register error:', error);
-      setErrors({ submit: 'Có lỗi xảy ra. Vui lòng thử lại.' });
-    } finally {
-      setIsLoading(false);
+      alert('Lỗi đăng ký: ' + (error.response?.data?.message || 'Không thể kết nối máy chủ'));
     }
   };
 
   return (
-    <div className="dangky-container">
-      <div className="dangky-wrapper">
-        <div className="dangky-card">
-          <div className="dangky-header">
-            <h2>Đăng Ký</h2>
-            <p>Tạo tài khoản mới để bắt đầu</p>
-          </div>
+    <div className="login-container">
+      <form className="register-form" onSubmit={handleSubmit}>
+        <h2>Đăng ký tài khoản</h2>
 
-          <form onSubmit={handleSubmit} className="dangky-form">
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="hoTen">Họ và tên *</label>
-                <input
-                  type="text"
-                  id="hoTen"
-                  name="hoTen"
-                  value={formData.hoTen}
-                  onChange={handleChange}
-                  className={errors.hoTen ? 'error' : ''}
-                  placeholder="Nhập họ và tên"
-                />
-                {errors.hoTen && <span className="error-message">{errors.hoTen}</span>}
-              </div>
-            </div>
+        <label htmlFor="username">Tên người dùng</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          value={formData.username}
+          onChange={handleChange}
+          className={errors.username ? 'error' : ''}
+          placeholder="Nhập tên người dùng"
+        />
+        {errors.username && <span className="error-message">{errors.username}</span>}
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="email">Email *</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={errors.email ? 'error' : ''}
-                  placeholder="Nhập email của bạn"
-                />
-                {errors.email && <span className="error-message">{errors.email}</span>}
-              </div>
-            </div>
+         <label htmlFor="matKhau">Mật khẩu</label>
+        <input
+          type="password"
+          id="matKhau"
+          name="matKhau"
+          value={formData.matKhau}
+          onChange={handleChange}
+          className={errors.matKhau ? 'error' : ''}
+          placeholder="Nhập mật khẩu"
+        />
+        {errors.matKhau && <span className="error-message">{errors.matKhau}</span>}
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="matKhau">Mật khẩu *</label>
-                <input
-                  type="password"
-                  id="matKhau"
-                  name="matKhau"
-                  value={formData.matKhau}
-                  onChange={handleChange}
-                  className={errors.matKhau ? 'error' : ''}
-                  placeholder="Nhập mật khẩu"
-                />
-                {errors.matKhau && <span className="error-message">{errors.matKhau}</span>}
-              </div>
-            </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="xacNhanMatKhau">Xác nhận mật khẩu *</label>
-                <input
-                  type="password"
-                  id="xacNhanMatKhau"
-                  name="xacNhanMatKhau"
-                  value={formData.xacNhanMatKhau}
-                  onChange={handleChange}
-                  className={errors.xacNhanMatKhau ? 'error' : ''}
-                  placeholder="Nhập lại mật khẩu"
-                />
-                {errors.xacNhanMatKhau && <span className="error-message">{errors.xacNhanMatKhau}</span>}
-              </div>
-            </div>
+        <label htmlFor="hoTen">Họ tên</label>
+        <input
+          type="text"
+          id="hoTen"
+          name="hoTen"
+          value={formData.hoTen}
+          onChange={handleChange}
+          className={errors.hoTen ? 'error' : ''}
+          placeholder="Nhập họ tên"
+        />
+        {errors.hoTen && <span className="error-message">{errors.hoTen}</span>}
 
-            <div className="form-terms">
-              <label className="checkbox-container">
-                <input 
-                  type="checkbox" 
-                  checked={acceptTerms}
-                  onChange={(e) => {
-                    setAcceptTerms(e.target.checked);
-                    if (errors.terms) {
-                      setErrors(prev => ({ ...prev, terms: '' }));
-                    }
-                  }}
-                />
-                <span className="checkmark"></span>
-                Tôi đồng ý với <Link to="/dieu-khoan" target="_blank">Điều khoản sử dụng</Link> và 
-                <Link to="/chinh-sach" target="_blank"> Chính sách bảo mật</Link>
-              </label>
-              {errors.terms && <span className="error-message">{errors.terms}</span>}
-            </div>
+       
+        <label htmlFor="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          className={errors.email ? 'error' : ''}
+          placeholder="Nhập email"
+        />
+        {errors.email && <span className="error-message">{errors.email}</span>}
 
-            {errors.submit && (
-              <div className="error-message submit-error">{errors.submit}</div>
-            )}
+        <label htmlFor="soDienThoai">Số điện thoại</label>
+        <input
+          type="text"
+          id="soDienThoai"
+          name="soDienThoai"
+          value={formData.soDienThoai}
+          onChange={handleChange}
+          className={errors.soDienThoai ? 'error' : ''}
+          placeholder="Nhập số điện thoại"
+        />
+        {errors.soDienThoai && <span className="error-message">{errors.soDienThoai}</span>}
 
-            <button 
-              type="submit" 
-              className="dangky-button"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Đang đăng ký...' : 'Đăng Ký'}
-            </button>
-          </form>
+        <label htmlFor="diaChi">Địa chỉ</label>
+        <input
+          type="text"
+          id="diaChi"
+          name="diaChi"
+          value={formData.diaChi}
+          onChange={handleChange}
+          className={errors.diaChi ? 'error' : ''}
+          placeholder="Nhập địa chỉ"
+        />
+        {errors.diaChi && <span className="error-message">{errors.diaChi}</span>}
 
-          <div className="dangky-footer">
-            <p>
-              Đã có tài khoản? 
-              <Link to="/dang-nhap" className="login-link"> Đăng nhập ngay</Link>
-            </p>
-          </div>
+        <button type="submit">Đăng ký</button>
 
-         
-        </div>
-      </div>
+        <p style={{ marginTop: '16px' }}>
+          Đã có tài khoản? <Link to="/login">Đăng nhập</Link>
+        </p>
+      </form>
     </div>
   );
 };
