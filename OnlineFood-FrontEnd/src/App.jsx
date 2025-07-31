@@ -11,6 +11,9 @@ import RequireAdmin from './routes/RequireAdmin';
 import Unauthorized from './pages/Unauthorized/Unauthorized';
 import QuanLyMonAn from './pages/Admin/QuanLyMonAn/QuanLyMonAn';
 import ThemSuaMonAn from './pages/Admin/QuanLyMonAn/ThemSuaMonAn';
+import MenuMonAn from './pages/Home/MenuMonAn/MenuMonAn'
+import ChiTietMonAn from './pages/Home/ChiTietMonAn/ChiTietMonAn'
+
 const App = () => {
   return (
     <Router>
@@ -23,14 +26,17 @@ const App = () => {
           <Route path="/" element={<TrangChu />} />
           <Route path="/login" element={<DangNhap />} />
           <Route path="/signup" element={<DangKy />} />
-           <Route path="/profile" element={<Profile />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/menu" element={<MenuMonAn />} />
+          <Route path="/chi-tiet-mon-an/:id" element={<ChiTietMonAn />} />
+          
            
 
           <Route path="/quan-ly-danh-muc" element={ <RequireAdmin>  <QuanLyDanhMuc /> </RequireAdmin> } />
-           <Route path="/quan-ly-mon-an" element={ <RequireAdmin>  <QuanLyMonAn /> </RequireAdmin> } />
-            <Route path="/them-sua-mon-an" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
-           <Route path="/them-sua-mon-an/:id" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
+          <Route path="/quan-ly-mon-an" element={ <RequireAdmin>  <QuanLyMonAn /> </RequireAdmin> } />
+          <Route path="/them-sua-mon-an" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
+          <Route path="/them-sua-mon-an/:id" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
           
         </Routes>
       </div>
