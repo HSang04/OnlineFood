@@ -62,6 +62,7 @@ public MonAn update(Long id, MonAnDTO dto, MultipartFile[] imageFiles) throws IO
     existing.setGia(dto.getGia());
     existing.setMoTa(dto.getMoTa());
     existing.setDanhMuc(dto.getDanhMuc());
+    existing.setTrangThai(dto.getTrangThai());
 
     // Danh sách ảnh cần giữ lại
     List<Long> keptIds = dto.getKeptImageIds() != null ? dto.getKeptImageIds() : List.of();
@@ -112,7 +113,7 @@ public MonAn update(Long id, MonAnDTO dto, MultipartFile[] imageFiles) throws IO
     }
 
     public Optional<MonAn> getImagesByMonAnId(Long monAnId) {
-        return monAnRepository.findWithHinhAnhMonAnsById(monAnId);
+        return monAnRepository.findWithHinhAnhMonAnsAndKhuyenMaiById(monAnId);
     }
 
     public HinhAnhMonAn saveImage(Long monAnId, MultipartFile imageFile) throws IOException {

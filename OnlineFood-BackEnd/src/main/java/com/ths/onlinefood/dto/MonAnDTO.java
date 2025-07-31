@@ -14,6 +14,7 @@ public class MonAnDTO {
     private String tenMonAn;
     private double gia;
     private String moTa;
+    private int trangThai;
     private DanhMuc danhMuc;
     private List<Long> keptImageIds;
 }

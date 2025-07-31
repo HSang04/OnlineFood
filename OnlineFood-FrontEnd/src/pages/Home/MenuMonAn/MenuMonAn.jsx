@@ -15,12 +15,22 @@ const MenuMonAn = () => {
 
   const navigate = useNavigate();
 
+ 
+    const tinhPhanTramGiamGia = (giaGoc, giaGiam) => {
+      if (!giaGoc || !giaGiam || giaGiam <= 0 || giaGiam >= giaGoc) {
+        return 0;
+      }
+      return Math.round(100 - (giaGiam / giaGoc)*100 );
+    };
+
+
   const fetchMonAn = async () => {
     setLoading(true);
     try {
       const res = await axios.get('/mon-an');
-      setDsMonAn(res.data);
-      setDsMonAnGoc(res.data);
+      const activeItems = res.data.filter(mon => mon.trangThai === 1); 
+      setDsMonAn(activeItems);
+      setDsMonAnGoc(activeItems);
     } catch (err) {
       console.error("Lỗi lấy danh sách món ăn:", err);
     } finally {
@@ -94,12 +104,12 @@ const MenuMonAn = () => {
     setSortBy("");
   };
 
-  const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(price);
-  };
+  // const formatPrice = (price) => {
+  //   return new Intl.NumberFormat('vi-VN', {
+  //     style: 'currency',
+  //     currency: 'VND'
+  //   }).format(price);
+  // };
 
   return (
     <div className="restaurant-layout">
@@ -117,7 +127,6 @@ const MenuMonAn = () => {
             
             <div className="search-bar">
               <div className="search-input-wrapper">
-                <i className="fas fa-search search-icon"></i>
                 <input
                   type="text"
                   value={keyword}
@@ -126,15 +135,12 @@ const MenuMonAn = () => {
                   className="main-search"
                   onKeyPress={(e) => e.key === 'Enter' && applyFilters()}
                 />
-                
               </div>
-             
             </div>
           </div>
         </div>
       </div>
 
-   
       <div className="filter-bar">
         <div className="container">
           <div className="filter-controls">
@@ -214,59 +220,80 @@ const MenuMonAn = () => {
                 </div>
               )}
 
-          
               <div className="products-grid">
                 {dsMonAn.length > 0 ? (
-                  dsMonAn.map((mon) => (
-                    <div key={mon.id} className="product-card">
-                      <div 
-                        className="product-image"
-                        onClick={() => navigate(`/chi-tiet-mon-an/${mon.id}`)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        {mon.hinhAnhMonAns?.length > 0 ? (
-                          <img
-                            src={mon.hinhAnhMonAns[0].duongDan}
-                            alt={mon.tenMonAn}
-                            className="dish-image"
-                          />
-                        ) : (
-                          <div className="no-image">
-                            <i className="fas fa-utensils"></i>
+                  dsMonAn.map((mon) => {
+                    
+                    const discountPercentage = tinhPhanTramGiamGia(mon.gia, mon.khuyenMai?.giaGiam);
+                    
+                    return (
+                      <div key={mon.id} className="product-card">
+                        {discountPercentage > 0 && (
+                          <div className="sale-badge">
+                            Giảm {discountPercentage}%
                           </div>
                         )}
-                      </div>
-                      
-                      <div className="product-info">
-                        <div className="product-labels">
-                          <span className="label">{mon.danhMuc?.tenDanhMuc || "Món ăn"}</span>
-                        </div>
                         
-                        <h3 
-                          className="product-name"
+                        <div 
+                          className="product-image"
                           onClick={() => navigate(`/chi-tiet-mon-an/${mon.id}`)}
                           style={{ cursor: 'pointer' }}
                         >
-                          {mon.tenMonAn}
-                        </h3>
-                        
-                        <div className="price-section">
-                          <span className="current-price">{formatPrice(mon.gia)}</span>
+                          {mon.hinhAnhMonAns?.length > 0 ? (
+                            <img
+                              src={mon.hinhAnhMonAns[0].duongDan}
+                              alt={mon.tenMonAn}
+                              className="dish-image"
+                            />
+                          ) : (
+                            <div className="no-image">
+                              <i className="fas fa-utensils"></i>
+                            </div>
+                          )}
                         </div>
                         
-                        {mon.moTa && (
-                          <p className="product-description">{mon.moTa}</p>
-                        )}
-                        
-                        <button 
-                          className="buy-btn"
-                          onClick={() => navigate(`/chi-tiet-mon-an/${mon.id}`)}
-                        >
-                          XEM CHI TIẾT
-                        </button>
+                        <div className="product-info">
+                          <div className="product-labels">
+                            <span className="label">{mon.danhMuc?.tenDanhMuc || "Món ăn"}</span>
+                          </div>
+                          
+                          <h3 
+                            className="product-name"
+                            onClick={() => navigate(`/chi-tiet-mon-an/${mon.id}`)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {mon.tenMonAn}
+                          </h3>
+                          
+                     <div className="price-section" style={{ textAlign: "center" }}>
+                            {mon.khuyenMai?.giaGiam ? (
+                              <div>
+                                <div style={{ color: "red", fontWeight: "bold", fontSize: "26px" }}>
+                                  {mon.khuyenMai.giaGiam.toLocaleString()} đ
+                                </div>
+                                <div style={{ textDecoration: "line-through", color: "gray", fontSize: "15px" }}>
+                                  {mon.gia.toLocaleString()} đ
+                                </div>
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: "30px" ,color: "gray"}}>{mon.gia.toLocaleString()} đ</div>
+                            )}
+                          </div>
+
+                          {mon.moTa && (
+                            <p className="product-description">{mon.moTa}</p>
+                          )}
+                          
+                          <button 
+                            className="buy-btn"
+                            onClick={() => navigate(`/chi-tiet-mon-an/${mon.id}`)}
+                          >
+                            XEM CHI TIẾT
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 ) : (
                   !loading && (
                     <div className="no-results">

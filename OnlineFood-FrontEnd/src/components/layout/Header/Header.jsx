@@ -16,7 +16,7 @@ const Header = () => {
 
   return (
     <nav className="navbar navbar-expand-lg custom-navbar px-4">
-      <Link className="navbar-brand" to="/">OU RESTAURANT</Link>
+      <Link className="navbar-brand" to="/">OU FOOD</Link>
       <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span className="navbar-toggler-icon"></span>
       </button>

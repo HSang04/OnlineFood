@@ -13,8 +13,14 @@ const ThemSuaMonAn = () => {
     gia: '',
     moTa: '',
     danhMuc: '',
+    trangThai: '1',
   });
-
+  
+  const [khuyenMai, setKhuyenMai] = useState({
+    giaGiam: "",
+    thoiHan: "",
+    hasThoiHan: false, 
+  });
   const [danhMucs, setDanhMucs] = useState([]);
   const [images, setImages] = useState([]); // Ảnh mới được chọn
   const [previews, setPreviews] = useState([]); // Preview ảnh mới
@@ -23,6 +29,7 @@ const ThemSuaMonAn = () => {
   const [deletedImageIds, setDeletedImageIds] = useState([]); // ID các ảnh cần xóa
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [khuyenMaiEnabled, setKhuyenMaiEnabled] = useState(false);
 
   useEffect(() => {
     const fetchDanhMucs = async () => {
@@ -49,16 +56,34 @@ const ThemSuaMonAn = () => {
             headers: { Authorization: `Bearer ${jwt}` },
           });
           const monAn = res.data;
+          console.log('MonAn data from server:', monAn);
+          console.log('TrangThai value:', monAn.trangThai, typeof monAn.trangThai);
+          
           setForm({
             tenMonAn: monAn.tenMonAn || '',
             gia: monAn.gia || '',
             moTa: monAn.moTa || '',
             danhMuc: monAn.danhMuc?.id || '',
+            trangThai: monAn.trangThai?.toString() || '1',
           });
           // Đảm bảo oldImages là một mảng và có đầy đủ thông tin
           const images = monAn.hinhAnhMonAns || [];
           setOldImages(images);
-          setOriginalImages(images); // Lưu bản sao gốc để khôi phục
+          setOriginalImages(images); 
+
+           if (monAn.khuyenMai) {
+            setKhuyenMaiEnabled(true);
+            setKhuyenMai({
+              giaGiam: monAn.khuyenMai.giaGiam || '',
+              thoiHan: monAn.khuyenMai.thoiHan
+                ? monAn.khuyenMai.thoiHan.slice(0, 16)
+                : '',
+              hasThoiHan: !!monAn.khuyenMai.thoiHan,
+            });
+          } else {
+              setKhuyenMaiEnabled(false);
+              setKhuyenMai({ giaGiam: '', thoiHan: '' });
+            }
         } catch (err) {
           console.error('Lỗi khi tải món ăn:', err);
           setError('Không thể tải thông tin món ăn');
@@ -78,6 +103,11 @@ const ThemSuaMonAn = () => {
     };
   }, [images]);
 
+
+  const formatDateTime = (dateTimeLocal) => {
+  if (!dateTimeLocal) return null;
+  return dateTimeLocal.includes(':00') ? dateTimeLocal : dateTimeLocal + ':00';
+};
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
     setError(''); // Clear error khi user nhập liệu
@@ -122,53 +152,183 @@ const ThemSuaMonAn = () => {
       }
     }
   };
-
- const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
   setLoading(true);
   setError('');
 
   try {
-    // Tạo danh sách keptImageIds: ảnh cũ chưa bị người dùng xóa
-    const keptImageIds = oldImages.map(img => img.id);
+    // Validation trước khi gửi
+    if (!form.tenMonAn.trim()) {
+      setError('Tên món ăn không được để trống');
+      setLoading(false);
+      return;
+    }
+    
+    if (!form.danhMuc) {
+      setError('Vui lòng chọn danh mục');
+      setLoading(false);
+      return;
+    }
+    
+    if (!form.gia || parseFloat(form.gia) <= 0) {
+      setError('Giá phải lớn hơn 0');
+      setLoading(false);
+      return;
+    }
 
-    const monAnData = {
-      tenMonAn: form.tenMonAn,
+    const keptImageIds = oldImages.map((img) => img.id);
+
+    // Cả POST và PUT đều expect danhMuc object
+    const dataToSend = {
+      tenMonAn: form.tenMonAn.trim(),
       gia: parseFloat(form.gia),
-      moTa: form.moTa,
-      danhMuc: { id: parseInt(form.danhMuc) },
-      keptImageIds: keptImageIds, // gửi danh sách ảnh giữ lại
+      moTa: form.moTa.trim(),
+      danhMuc: { id: parseInt(form.danhMuc) }, // Cả MonAn và MonAnDTO đều expect DanhMuc object
+      trangThai: parseInt(form.trangThai),
     };
+
+    // Chỉ thêm keptImageIds khi đang sửa (PUT) vì MonAnDTO có field này
+    if (id) {
+      dataToSend.keptImageIds = keptImageIds;
+    }
+
+    console.log('Data to send:', dataToSend);
+
+    // Debug logging
+    console.log('Form data to send:', form);
+    console.log('Images count:', images.length);
+    console.log('Old images count:', oldImages.length);
 
     const formData = new FormData();
-    formData.append("monAn", JSON.stringify(monAnData));
+    
+    // Backend expect JSON string với key "monAn"
+    formData.append("monAn", JSON.stringify(dataToSend));
+    
+    // Backend expect MultipartFile[] với key "images" 
+    if (images.length > 0) {
+      images.forEach((img, index) => {
+        console.log(`Adding image ${index}:`, img.name, img.type, img.size);
+        formData.append("images", img); // Tất cả file dùng cùng key "images"
+      });
+    }
 
-    // Thêm ảnh mới
-    images.forEach((img) => {
-      formData.append("images", img);
-    });
+    // Debug: Log FormData contents
+    console.log('FormData contents:');
+    for (let [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`${key}:`, {
+          name: value.name,
+          type: value.type,
+          size: value.size
+        });
+      } else {
+        console.log(`${key}:`, value);
+      }
+    }
 
-    const config = {
-      headers: {
-        "Content-Type": "multipart/form-data",
-        Authorization: `Bearer ${jwt}`,
-      },
-    };
+    let monAnId;
+
+    // Debug: Log request details
+    console.log('Request URL:', id ? `/mon-an/${id}` : '/mon-an');
+    console.log('Request method:', id ? 'PUT' : 'POST');
 
     if (id) {
-      await axios.put(`/mon-an/${id}`, formData, config);
+      const response = await axios.put(`/mon-an/${id}`, formData, {
+        headers: { 
+          Authorization: `Bearer ${jwt}`
+          // Không set Content-Type, để browser tự động set cho FormData
+        },
+      });
+      console.log('PUT response:', response);
+      monAnId = id;
     } else {
-      await axios.post("/mon-an", formData, config);
+      const response = await axios.post("/mon-an", formData, {
+        headers: { 
+          Authorization: `Bearer ${jwt}`
+          // Không set Content-Type, để browser tự động set cho FormData
+        },
+      });
+      console.log('POST response:', response);
+      monAnId = response.data.id;
+    }
+
+    // 👉 Chỉ xử lý khuyến mãi nếu đang sửa món ăn
+    if (id) {
+      const coKhuyenMai = khuyenMaiEnabled && khuyenMai.giaGiam && parseFloat(khuyenMai.giaGiam) > 0;
+      const coThoiHan = khuyenMai.hasThoiHan && khuyenMai.thoiHan;
+
+      if (coKhuyenMai) {
+        if (parseFloat(khuyenMai.giaGiam) >= parseFloat(form.gia)) {
+          setError("Giá khuyến mãi phải nhỏ hơn giá gốc.");
+          setLoading(false);
+          return;
+        }
+
+        if (khuyenMai.hasThoiHan && !khuyenMai.thoiHan) {
+          setError("Vui lòng chọn thời hạn dừng khuyến mãi.");
+          setLoading(false);
+          return;
+        }
+      }
+
+      let khuyenMaiCu = null;
+      const monAnRes = await axios.get(`/mon-an/${id}`, {
+        headers: { Authorization: `Bearer ${jwt}` },
+      });
+      khuyenMaiCu = monAnRes.data?.khuyenMai;
+
+      if (khuyenMaiCu && !coKhuyenMai) {
+        await axios.delete(`/khuyen-mai/${monAnId}`, {
+          headers: { Authorization: `Bearer ${jwt}` },
+        });
+      } else if (!khuyenMaiCu && coKhuyenMai) {
+        await axios.post(
+          "/khuyen-mai",
+          {
+            monAnId,
+            giaGiam: parseFloat(khuyenMai.giaGiam),
+            thoiHan: coThoiHan ? formatDateTime(khuyenMai.thoiHan) : null,
+          },
+          { headers: { Authorization: `Bearer ${jwt}` } }
+        );
+      } else if (khuyenMaiCu && coKhuyenMai) {
+        await axios.put(
+          `/khuyen-mai/${monAnId}`,
+          {
+            monAnId,
+            giaGiam: parseFloat(khuyenMai.giaGiam),
+            thoiHan: coThoiHan ? formatDateTime(khuyenMai.thoiHan) : null,
+          },
+          { headers: { Authorization: `Bearer ${jwt}` } }
+        );
+      }
     }
 
     navigate("/quan-ly-mon-an");
+
   } catch (err) {
     console.error("Lỗi khi lưu món ăn:", err);
-    setError(err.response?.data?.message || 'Có lỗi xảy ra khi lưu món ăn');
+    console.error("Error response:", err.response);
+    console.error("Error response data:", err.response?.data);
+    console.error("Error response status:", err.response?.status);
+    
+    let errorMessage = 'Có lỗi xảy ra khi lưu món ăn';
+    if (err.response?.data?.message) {
+      errorMessage = err.response.data.message;
+    } else if (err.response?.data) {
+      // Nếu response.data là string
+      errorMessage = typeof err.response.data === 'string' ? err.response.data : errorMessage;
+    }
+    
+    setError(errorMessage);
   } finally {
     setLoading(false);
   }
 };
+
+
+
 
 
   if (loading && id) {
@@ -231,6 +391,96 @@ const ThemSuaMonAn = () => {
           />
         </div>
 
+        {/* Chỉ hiển thị phần khuyến mãi khi đang sửa món ăn (có id) */}
+        {id && (
+          <>
+            <div className="form-group">
+              <label>Khuyến mãi:</label>
+              <div>
+                <label>
+                  <input
+                    type="radio"
+                    name="khuyenMaiOption"
+                    checked={!khuyenMaiEnabled}
+                    onChange={() => setKhuyenMaiEnabled(false)}
+                  /> Không áp dụng
+                </label>
+                <label style={{ marginLeft: "20px" }}>
+                  <input
+                    type="radio"
+                    name="khuyenMaiOption"
+                    checked={khuyenMaiEnabled}
+                    onChange={() => setKhuyenMaiEnabled(true)}
+                  /> Áp dụng khuyến mãi
+                </label>
+              </div>
+            </div>
+
+            {khuyenMaiEnabled && (
+              <>
+                <div className="form-group">
+                  <label>Giá khuyến mãi:</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={khuyenMai.giaGiam}
+                    onChange={(e) =>
+                      setKhuyenMai({ ...khuyenMai, giaGiam: e.target.value })
+                    }
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Thời hạn:</label>
+                  <div>
+                    <label>
+                      <input
+                        type="radio"
+                        name="thoiHanOption"
+                        checked={!khuyenMai.hasThoiHan}
+                        onChange={() =>
+                          setKhuyenMai((prev) => ({
+                            ...prev,
+                            hasThoiHan: false,
+                            thoiHan: '',
+                          }))
+                        }
+                      /> Không thời hạn
+                    </label>
+                    <label style={{ marginLeft: '20px' }}>
+                      <input
+                        type="radio"
+                        name="thoiHanOption"
+                        checked={khuyenMai.hasThoiHan}
+                        onChange={() =>
+                          setKhuyenMai((prev) => ({
+                            ...prev,
+                            hasThoiHan: true,
+                          }))
+                        }
+                      /> Có thời hạn
+                    </label>
+                  </div>
+                </div>
+
+                {khuyenMai.hasThoiHan && (
+                  <div className="form-group">
+                    <label>Chọn thời hạn dừng khuyến mãi:</label>
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      value={khuyenMai.thoiHan}
+                      onChange={(e) =>
+                        setKhuyenMai({ ...khuyenMai, thoiHan: e.target.value })
+                      }
+                    />
+                  </div>
+                )}
+              </>
+            )}
+          </>
+        )}
+
         <div>
           <label>Mô tả:</label>
           <textarea
@@ -239,6 +489,20 @@ const ThemSuaMonAn = () => {
             onChange={handleChange}
             rows="4"
           />
+        </div>
+
+        
+        <div>
+          <label>Trạng thái:</label>
+          <select
+            name="trangThai"
+            value={form.trangThai}
+            onChange={handleChange}
+            required
+          >
+            <option value="1">Đang bán</option>
+            <option value="2">Ngừng bán</option>
+          </select>
         </div>
 
         {/* Hiển thị ảnh cũ */}

@@ -34,5 +34,10 @@ public class MonAn {
     @OneToMany(mappedBy = "monAn", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
     private List<HinhAnhMonAn> hinhAnhMonAns;
+    
+    @OneToOne(mappedBy = "monAn", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private KhuyenMai khuyenMai;
+
 
 }

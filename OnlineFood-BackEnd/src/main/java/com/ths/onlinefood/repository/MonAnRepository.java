@@ -9,7 +9,9 @@ import org.springframework.data.jpa.repository.EntityGraph;
 
 public interface MonAnRepository extends JpaRepository<MonAn, Long> {
     List<MonAn> findByTenMonAnContainingIgnoreCase(String keyword);
-    @EntityGraph(attributePaths = "hinhAnhMonAns")
-    Optional<MonAn> findWithHinhAnhMonAnsById(Long id);
+   @EntityGraph(attributePaths = {"hinhAnhMonAns", "khuyenMai"})
+    Optional<MonAn> findWithHinhAnhMonAnsAndKhuyenMaiById(Long id);
 
+    
+ 
 }

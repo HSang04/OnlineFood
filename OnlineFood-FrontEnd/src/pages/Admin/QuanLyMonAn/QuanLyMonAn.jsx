@@ -44,22 +44,33 @@ const QuanLyMonAn = () => {
     }
   };
 
-  const handleSort = (field) => {
-    const newDirection = sortField === field && sortDirection === "asc" ? "desc" : "asc";
-    setSortField(field);
-    setSortDirection(newDirection);
+    const handleSort = (field) => {
+      const newDirection = sortField === field && sortDirection === "asc" ? "desc" : "asc";
+      setSortField(field);
+      setSortDirection(newDirection);
 
-    const sorted = [...dsMonAn].sort((a, b) => {
-      const aValue = field === "danhMuc" ? a.danhMuc?.tenDanhMuc || "" : a[field];
-      const bValue = field === "danhMuc" ? b.danhMuc?.tenDanhMuc || "" : b[field];
+      const sorted = [...dsMonAn].sort((a, b) => {
+        let aValue, bValue;
 
-      if (aValue < bValue) return newDirection === "asc" ? -1 : 1;
-      if (aValue > bValue) return newDirection === "asc" ? 1 : -1;
-      return 0;
-    });
+        if (field === "danhMuc") {
+          aValue = a.danhMuc?.tenDanhMuc || "";
+          bValue = b.danhMuc?.tenDanhMuc || "";
+        } else if (field === "trangThai") {
+          aValue = a.trangThai;
+          bValue = b.trangThai;
+        } else {
+          aValue = a[field];
+          bValue = b[field];
+        }
 
-    setDsMonAn(sorted);
-  };
+        if (aValue < bValue) return newDirection === "asc" ? -1 : 1;
+        if (aValue > bValue) return newDirection === "asc" ? 1 : -1;
+        return 0;
+      });
+
+      setDsMonAn(sorted);
+    };
+
 
   return (
     <div className="monan-container">
@@ -82,6 +93,10 @@ const QuanLyMonAn = () => {
         <button onClick={() => handleSort("danhMuc")} className="btn-sort">
           Sắp xếp theo Danh mục {sortField === "danhMuc" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
         </button>
+
+        <button onClick={() => handleSort("trangThai")} className="btn-sort">
+          Sắp xếp theo Trạng thái {sortField === "trangThai" ? (sortDirection === "asc" ? "▲" : "▼") : ""}
+        </button>
       </div>
 
       <table className="monan-table">
@@ -93,6 +108,7 @@ const QuanLyMonAn = () => {
             <th>Ảnh</th>
             <th>Giá</th>
             <th>Mô tả</th>
+            <th>Trạng thái</th> 
             <th>Thao tác</th>
           </tr>
         </thead>
@@ -113,8 +129,24 @@ const QuanLyMonAn = () => {
                   <span className="no-img">Không có ảnh</span>
                 )}
               </td>
-              <td>{mon.gia.toLocaleString()} đ</td>
+         <td>
+            {mon.khuyenMai?.giaGiam ? (
+              <div>
+                <div style={{ color: "red", fontWeight: "bold" }}>
+                  {mon.khuyenMai.giaGiam.toLocaleString()} đ
+                </div>
+                <div style={{ textDecoration: "line-through", color: "gray", fontSize: "smaller" }}>
+                  {mon.gia.toLocaleString()} đ
+                </div>
+                
+              </div>
+            ) : (
+              <div>{mon.gia.toLocaleString()} đ</div>
+            )}
+          </td>
+
               <td>{mon.moTa}</td>
+                <td>{mon.trangThai === 1 ? "Đang bán" : "Ngừng kinh doanh"}</td>
               <td>
                 <button
                   onClick={() => navigate(`/them-sua-mon-an/${mon.id}`)}
