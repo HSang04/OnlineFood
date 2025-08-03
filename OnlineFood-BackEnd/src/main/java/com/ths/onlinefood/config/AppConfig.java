@@ -33,6 +33,7 @@ public class AppConfig {
 //                .requestMatchers("/api/nguoi-dung/**").hasAnyAuthority("ADMIN", "QUANLY")
                 .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "QUANLY")
                 .requestMatchers("/api/**").authenticated()
+                .requestMatchers("/api/nguoi-dung/secure/**").authenticated()
                 .anyRequest().permitAll()
             )
             .addFilterBefore(new JwtTokenValidator(), BasicAuthenticationFilter.class)

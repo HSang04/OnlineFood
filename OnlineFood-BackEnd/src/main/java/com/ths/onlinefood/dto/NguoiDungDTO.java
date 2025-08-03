@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class NguoiDungDTO {
     private Long id;
+    private String username;
+    private String matKhau;
     private String hoTen;
     private String email;
     private String soDienThoai;
