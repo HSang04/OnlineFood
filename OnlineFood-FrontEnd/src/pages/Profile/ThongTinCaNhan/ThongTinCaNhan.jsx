@@ -1,8 +1,8 @@
-import axios from "../../services/axiosInstance";
+import axios from "../../../services/axiosInstance";
 import React, { useEffect, useState } from "react";
-import "./Profile.css";
+import "./ThongTinCaNhan.css";
 
-const Profile = () => {
+const ThongTinCaNhan = () => {
   const [user, setUser] = useState(null);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
@@ -207,14 +207,14 @@ const Profile = () => {
     <div className="profile-container">
       <h2>Thông tin cá nhân</h2>
       
-      {/* General messages */}
+  
       {message && (
         <div className={`message ${message.includes('thành công') ? 'success' : 'error'}`}>
           {message}
         </div>
       )}
 
-      {/* Profile View Mode */}
+  
       {!isEditingInfo && !isChangingPassword && (
         <div className="profile-view">
           <p><strong>Username:</strong> {user.username}</p>
@@ -243,7 +243,7 @@ const Profile = () => {
         </div>
       )}
 
-      {/* Edit Basic Info Form */}
+  
       {isEditingInfo && (
         <div className="profile-edit">
           <h3>Chỉnh sửa thông tin cá nhân</h3>
@@ -390,4 +390,4 @@ const Profile = () => {
   );
 };
 
-export default Profile;
+export default ThongTinCaNhan;

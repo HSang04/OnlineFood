@@ -22,18 +22,20 @@ import org.springframework.http.HttpMethod;
 @Configuration
 public class AppConfig {
 
-    @Bean
+   @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
+              
                 .requestMatchers("/auth/signup", "/auth/login").permitAll()
                 .requestMatchers("/auth/signup-by-admin").hasAnyAuthority("ADMIN", "QUANLY")
-//                .requestMatchers(HttpMethod.POST, "/api/nguoi-dung").permitAll() 
-//                .requestMatchers("/api/nguoi-dung/**").hasAnyAuthority("ADMIN", "QUANLY")
                 .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "QUANLY")
-                .requestMatchers("/api/**").authenticated()
                 .requestMatchers("/api/nguoi-dung/secure/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/nguoi-dung").permitAll() 
+                .requestMatchers("/api/nguoi-dung/**").hasAnyAuthority("ADMIN", "QUANLY")
+                .requestMatchers("/api/gio-hang/**").hasAnyAuthority("KHACHHANG")
+                .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )
             .addFilterBefore(new JwtTokenValidator(), BasicAuthenticationFilter.class)

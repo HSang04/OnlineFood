@@ -5,7 +5,7 @@ import Footer from './components/layout/Footer/Footer';
 import TrangChu from './pages/Home/TrangChu/TrangChu';
 import DangNhap from './pages/Auth/DangNhap/DangNhap';
 import DangKy from './pages/Auth/DangKy/DangKy';
-import Profile from './pages/Profile/Profile';
+import ThongTinCaNhan from './pages/Profile/ThongTinCaNhan/ThongTinCaNhan';
 import QuanLyDanhMuc from './pages/Admin/QuanLyDanhMuc/QuanLyDanhMuc';
 import RequireAdmin from './routes/RequireAdmin';
 import Unauthorized from './pages/Unauthorized/Unauthorized';
@@ -13,6 +13,7 @@ import QuanLyMonAn from './pages/Admin/QuanLyMonAn/QuanLyMonAn';
 import ThemSuaMonAn from './pages/Admin/QuanLyMonAn/ThemSuaMonAn';
 import MenuMonAn from './pages/Home/MenuMonAn/MenuMonAn'
 import ChiTietMonAn from './pages/Home/ChiTietMonAn/ChiTietMonAn'
+import GioHang from './pages/Profile/GioHang/GioHang';
 
 const App = () => {
   return (
@@ -26,10 +27,11 @@ const App = () => {
           <Route path="/" element={<TrangChu />} />
           <Route path="/login" element={<DangNhap />} />
           <Route path="/signup" element={<DangKy />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile" element={<ThongTinCaNhan />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           <Route path="/menu" element={<MenuMonAn />} />
           <Route path="/chi-tiet-mon-an/:id" element={<ChiTietMonAn />} />
+           <Route path="/cart" element={<GioHang />} />
           
            
 

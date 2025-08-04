@@ -42,10 +42,27 @@ const ChiTietMonAn = () => {
     }
   };
 
-  const handleAddToCart = () => {
-    // Logic thêm vào giỏ hàng
-    console.log(`Thêm ${quantity} ${monAn.tenMonAn} vào giỏ hàng`);
-    alert(`Đã thêm ${quantity} ${monAn.tenMonAn} vào giỏ hàng!`);
+  const handleAddToCart = async () => {
+  const idNguoiDung = localStorage.getItem("idNguoiDung"); // hoặc context.auth.userId
+
+    if (!idNguoiDung) {
+      alert("Bạn cần đăng nhập trước khi thêm vào giỏ hàng.");
+      return;
+    }
+
+    try {
+      await axios.post(`/gio-hang/${idNguoiDung}/add`, null, {
+        params: {
+          monAnId: monAn.id,
+          soLuong: quantity
+        }
+      });
+
+      alert(`Đã thêm ${quantity} "${monAn.tenMonAn}" vào giỏ hàng!`);
+    } catch (error) {
+      console.error("Lỗi thêm vào giỏ:", error);
+      alert("Thêm vào giỏ hàng thất bại.");
+    }
   };
 
   const formatPrice = (price) => {

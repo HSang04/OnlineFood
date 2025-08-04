@@ -1,11 +1,13 @@
 package com.ths.onlinefood.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -34,4 +36,8 @@ public class NguoiDung {
     private USER_ROLE vaiTro;
 
     private LocalDateTime ngayTao;
+    
+   @OneToMany(mappedBy = "nguoiDung", cascade = CascadeType.ALL)
+    @JsonIgnore
+    private List<GioHang> gioHangList;
 }

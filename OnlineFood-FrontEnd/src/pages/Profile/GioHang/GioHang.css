@@ -1,0 +1,123 @@
+
+.gio-hang-container {
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.gio-hang-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.gio-hang-table th,
+.gio-hang-table td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+.gio-hang-img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.btn-xoa,
+.btn-xoa-all {
+  background-color: #ff4d4d;
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.btn-xoa:hover,
+.btn-xoa-all:hover {
+  background-color: #cc0000;
+}
+
+.gio-hang-footer {
+  margin-top: 20px;
+  text-align: right;
+}
+/* Thêm vào file GioHang.css */
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: center;
+}
+
+.btn-quantity {
+  width: 30px;
+  height: 30px;
+  border: 1px solid #ddd;
+  background: #f8f9fa;
+  cursor: pointer;
+  border-radius: 4px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-quantity:hover:not(:disabled) {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.btn-quantity:disabled {
+  background: #e9ecef;
+  color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.quantity-input {
+  width: 50px;
+  height: 30px;
+  text-align: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+
+}
+
+.quantity-input::-webkit-outer-spin-button,
+.quantity-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.quantity-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+
+@media (max-width: 768px) {
+  .quantity-controls {
+    flex-direction: row;
+    gap: 3px;
+  }
+  
+  .btn-quantity {
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+  }
+  
+  .quantity-input {
+    width: 40px;
+    height: 25px;
+    font-size: 12px;
+  }
+}

@@ -1,5 +1,6 @@
 package com.ths.onlinefood.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -38,6 +39,10 @@ public class MonAn {
     @OneToOne(mappedBy = "monAn", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
     private KhuyenMai khuyenMai;
+    
+   @OneToMany(mappedBy = "monAn")
+    @JsonIgnore
+    private List<GioHang> gioHangList;
 
 
 }

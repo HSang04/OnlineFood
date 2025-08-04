@@ -1,7 +1,7 @@
 package com.ths.onlinefood.controller;
 
 import com.cloudinary.api.ApiResponse;
-import com.ths.onlinefood.dto.ApiResponseRequest;
+import com.ths.onlinefood.request.ApiResponseRequest;
 import com.ths.onlinefood.dto.NguoiDungDTO;
 import com.ths.onlinefood.model.NguoiDung;
 import com.ths.onlinefood.request.ChangePasswordRequest;
