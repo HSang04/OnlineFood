@@ -33,6 +33,8 @@ public class Voucher {
 
     private int daSuDung; 
     
+    private int giaToiThieu;
+    
     public enum LoaiVoucher {
         PHAN_TRAM,
         TIEN_MAT

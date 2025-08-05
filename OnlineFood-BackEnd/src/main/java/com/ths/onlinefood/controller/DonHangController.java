@@ -1,6 +1,7 @@
 package com.ths.onlinefood.controller;
 
 import com.ths.onlinefood.model.DonHang;
+import com.ths.onlinefood.request.DonHangRequest;
 import com.ths.onlinefood.service.DonHangService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -28,9 +29,16 @@ public class DonHangController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping
-    public DonHang create(@RequestBody DonHang donHang) {
-        return donHangService.create(donHang);
+  
+  @PostMapping("/dat-hang")
+    @Transactional
+    public ResponseEntity<DonHang> create(@RequestBody DonHangRequest request) {
+        try {
+            DonHang donHang = donHangService.createFromRequest(request);
+            return ResponseEntity.ok(donHang);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 
     @PutMapping("/{id}")
@@ -42,6 +50,8 @@ public class DonHangController {
     @DeleteMapping("/{id}")
     @Transactional
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        return donHangService.delete(id) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
+        return donHangService.delete(id)
+                ? ResponseEntity.ok().build()
+                : ResponseEntity.notFound().build();
     }
 }

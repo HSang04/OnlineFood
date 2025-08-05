@@ -31,4 +31,6 @@ public class DonHang {
     @ManyToOne
     @JoinColumn(name = "id_voucher")
     private Voucher voucher;
+    
+    private String diaChiGiaoHang;
 }

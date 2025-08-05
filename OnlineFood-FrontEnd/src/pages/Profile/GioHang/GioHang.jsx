@@ -1,13 +1,18 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "../../../services/axiosInstance";
+import { useNavigate } from "react-router-dom";
 import "./GioHang.css";
 
 const GioHang = () => {
+
+  const navigate = useNavigate();
+
   const [gioHang, setGioHang] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const nguoiDungId = localStorage.getItem("idNguoiDung");
+
 
   // Function tính giá thực tế (có tính khuyến mãi)
   const tinhGiaThucTe = (monAn) => {
@@ -102,6 +107,17 @@ const fetchGioHang = useCallback(async () => {
       console.error("Lỗi khi cập nhật số lượng:", err);
     }
   };
+
+  const handleDatHang = () => {
+    const tongTien = tinhTong();
+    const data = {
+      gioHang,
+      tongTien,
+    };
+
+    navigate("/pay", { state: data });
+  };
+
 
   
   const tinhTong = () => {
@@ -217,10 +233,17 @@ const fetchGioHang = useCallback(async () => {
 
           <div className="gio-hang-footer">
             <h3>Tổng cộng: {tinhTong().toLocaleString()}₫</h3>
-            <button className="btn-xoa-all" onClick={handleClear}>
-              Xóa tất cả
-            </button>
+            
+            <div style={{ display: "flex", gap: "10px" }}>
+              <button className="btn-xoa-all" onClick={handleClear}>
+                Xóa tất cả
+              </button>
+              <button className="btn-dat-hang" onClick={handleDatHang}>
+                Đặt hàng
+              </button>
+            </div>
           </div>
+
         </>
       )}
     </div>

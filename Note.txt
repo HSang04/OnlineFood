@@ -1,0 +1,1 @@
+5/8 : Cần fix lỗi ở trang Chi Tiết Món ăn ( chưa hiển thị đúng giá giảm sau KM)

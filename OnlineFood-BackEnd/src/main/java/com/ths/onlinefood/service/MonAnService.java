@@ -51,57 +51,46 @@ public class MonAnService {
         return saved;
     }
 
-public MonAn update(Long id, MonAnDTO dto, MultipartFile[] imageFiles) throws IOException {
-    Optional<MonAn> optional = monAnRepository.findById(id);
-    if (optional.isEmpty()) return null;
+    public MonAn update(Long id, MonAnDTO dto, MultipartFile[] imageFiles) throws IOException {
+        Optional<MonAn> optional = monAnRepository.findById(id);
+        if (optional.isEmpty()) return null;
 
-    MonAn existing = optional.get();
+        MonAn existing = optional.get();
 
-    // Cập nhật thông tin cơ bản từ DTO
-    existing.setTenMonAn(dto.getTenMonAn());
-    existing.setGia(dto.getGia());
-    existing.setMoTa(dto.getMoTa());
-    existing.setDanhMuc(dto.getDanhMuc());
-    existing.setTrangThai(dto.getTrangThai());
+        existing.setTenMonAn(dto.getTenMonAn());
+        existing.setGia(dto.getGia());
+        existing.setMoTa(dto.getMoTa());
+        existing.setDanhMuc(dto.getDanhMuc());
+        existing.setTrangThai(dto.getTrangThai());
 
-    // Danh sách ảnh cần giữ lại
-    List<Long> keptIds = dto.getKeptImageIds() != null ? dto.getKeptImageIds() : List.of();
+        List<Long> keptIds = dto.getKeptImageIds() != null ? dto.getKeptImageIds() : List.of();
+        List<HinhAnhMonAn> oldImages = hinhAnhMonAnRepository.findByMonAnId(id);
 
-    // Lấy danh sách ảnh cũ trong DB
-    List<HinhAnhMonAn> oldImages = hinhAnhMonAnRepository.findByMonAnId(id);
-
-    // Xóa các ảnh không nằm trong keptImageIds
-    for (HinhAnhMonAn img : oldImages) {
-        if (!keptIds.contains(img.getId())) {
-            hinhAnhMonAnRepository.delete(img);
-            // Nếu cần xóa cả ảnh trên Cloudinary thì thêm ở đây
+        for (HinhAnhMonAn img : oldImages) {
+            if (!keptIds.contains(img.getId())) {
+                hinhAnhMonAnRepository.delete(img);
+            }
         }
-    }
 
-    // Xử lý ảnh mới
-    if (imageFiles != null && imageFiles.length > 0) {
-        for (MultipartFile file : imageFiles) {
-            Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
-            String url = (String) uploadResult.get("secure_url");
+        if (imageFiles != null && imageFiles.length > 0) {
+            for (MultipartFile file : imageFiles) {
+                Map uploadResult = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+                String url = (String) uploadResult.get("secure_url");
 
-            HinhAnhMonAn newImage = new HinhAnhMonAn();
-            newImage.setMonAn(existing);
-            newImage.setDuongDan(url);
-            hinhAnhMonAnRepository.save(newImage);
+                HinhAnhMonAn newImage = new HinhAnhMonAn();
+                newImage.setMonAn(existing);
+                newImage.setDuongDan(url);
+                hinhAnhMonAnRepository.save(newImage);
+            }
         }
+
+        return monAnRepository.save(existing);
     }
-
-    return monAnRepository.save(existing);
-}
-
-
 
     public boolean delete(Long id) {
         if (monAnRepository.existsById(id)) {
-            // Xóa ảnh trước
             List<HinhAnhMonAn> images = hinhAnhMonAnRepository.findByMonAnId(id);
             hinhAnhMonAnRepository.deleteAll(images);
-
             monAnRepository.deleteById(id);
             return true;
         }
@@ -131,5 +120,13 @@ public MonAn update(Long id, MonAnDTO dto, MultipartFile[] imageFiles) throws IO
 
     public void deleteImage(Long imageId) {
         hinhAnhMonAnRepository.deleteById(imageId);
+    }
+
+  
+    public double getGiaBan(MonAn monAn) {
+        if (monAn.getKhuyenMai() != null && monAn.getKhuyenMai().getGiaGiam() > 0) {
+            return monAn.getKhuyenMai().getGiaGiam();
+        }
+        return monAn.getGia();
     }
 }

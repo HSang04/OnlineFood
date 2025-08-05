@@ -1,46 +1,92 @@
 package com.ths.onlinefood.service;
 
-import com.ths.onlinefood.model.DonHang;
-import com.ths.onlinefood.repository.DonHangRepository;
+import com.ths.onlinefood.model.*;
+import com.ths.onlinefood.repository.*;
+import com.ths.onlinefood.request.ChiTietDonHangRequest;
+import com.ths.onlinefood.request.DonHangRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class DonHangService {
-    private final DonHangRepository repository;
+
+    private final DonHangRepository donHangRepository;
+    private final ChiTietDonHangRepository chiTietDonHangRepository;
+    private final GioHangRepository gioHangRepository;
+    private final NguoiDungRepository nguoiDungRepository;
+    private final MonAnService monAnService;
+    private final VoucherRepository voucherRepository;
+   
+
+   @Transactional
+    public DonHang createFromRequest(DonHangRequest request) {
+        NguoiDung nguoiDung = nguoiDungRepository.findById(request.getNguoiDungId())
+                .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
+
+        DonHang donHang = new DonHang();
+        donHang.setNgayTao(LocalDateTime.now());
+        donHang.setTrangThai("Đang xử lý");
+        donHang.setTongTien(request.getTongTien());
+        donHang.setNguoiDung(nguoiDung);
+        donHang.setDiaChiGiaoHang(request.getDiaChiGiaoHang());
+       if (request.getVoucherId() != null) {
+            Voucher voucher = voucherRepository.findById(request.getVoucherId())
+                .orElseThrow(() -> new IllegalArgumentException("Voucher không tồn tại"));
+            donHang.setVoucher(voucher);
+}
+        DonHang savedDonHang = donHangRepository.save(donHang);
+
+        for (ChiTietDonHangRequest ctReq : request.getChiTietDonHang()) {
+            ChiTietDonHang ct = new ChiTietDonHang();
+            ct.setDonHang(savedDonHang);
+            Optional<MonAn> monAnOpt = monAnService.getById(ctReq.getMonAnId());
+            if (monAnOpt.isEmpty()) {
+                throw new IllegalArgumentException("Món ăn không tồn tại với ID: " + ctReq.getMonAnId());
+            }
+            ct.setMonAn(monAnOpt.get());
+
+            ct.setSoLuong(ctReq.getSoLuong());
+            ct.setDonGia(ctReq.getGia());
+            
+            
+            chiTietDonHangRepository.save(ct);
+        }
+
+        // xóa giỏ hàng
+        gioHangRepository.deleteAllByNguoiDung(nguoiDung);
+
+        return savedDonHang;
+    }
+
 
     public List<DonHang> getAll() {
-        return repository.findAll();
+        return donHangRepository.findAll();
     }
 
     public Optional<DonHang> getById(Long id) {
-        return repository.findById(id);
-    }
-
-    public DonHang create(DonHang donHang) {
-        return repository.save(donHang);
+        return donHangRepository.findById(id);
     }
 
     public DonHang update(Long id, DonHang newDH) {
-        return repository.findById(id)
-                .map(dh -> {
-                    dh.setNgayTao(newDH.getNgayTao());
-                    dh.setTrangThai(newDH.getTrangThai());
-                    dh.setTongTien(newDH.getTongTien());
-                    dh.setNguoiDung(newDH.getNguoiDung());
-                    dh.setVoucher(newDH.getVoucher());
-                    return repository.save(dh);
-                })
-                .orElse(null);
+        return donHangRepository.findById(id).map(dh -> {
+            dh.setNgayTao(newDH.getNgayTao());
+            dh.setTrangThai(newDH.getTrangThai());
+            dh.setTongTien(newDH.getTongTien());
+            dh.setNguoiDung(newDH.getNguoiDung());
+            dh.setVoucher(newDH.getVoucher());
+            return donHangRepository.save(dh);
+        }).orElse(null);
     }
 
     public boolean delete(Long id) {
-        if (!repository.existsById(id)) return false;
-        repository.deleteById(id);
+        if (!donHangRepository.existsById(id)) return false;
+        donHangRepository.deleteById(id);
         return true;
     }
 }

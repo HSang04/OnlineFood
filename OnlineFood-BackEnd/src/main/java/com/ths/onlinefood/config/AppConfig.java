@@ -33,6 +33,7 @@ public class AppConfig {
                 .requestMatchers("/api/admin/**").hasAnyAuthority("ADMIN", "QUANLY")
                 .requestMatchers("/api/nguoi-dung/secure/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/nguoi-dung").permitAll() 
+                .requestMatchers(HttpMethod.GET, "/api/nguoi-dung/**").authenticated()
                 .requestMatchers("/api/nguoi-dung/**").hasAnyAuthority("ADMIN", "QUANLY")
                 .requestMatchers("/api/gio-hang/**").hasAnyAuthority("KHACHHANG")
                 .requestMatchers("/api/**").authenticated()

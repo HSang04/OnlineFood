@@ -14,6 +14,7 @@ import ThemSuaMonAn from './pages/Admin/QuanLyMonAn/ThemSuaMonAn';
 import MenuMonAn from './pages/Home/MenuMonAn/MenuMonAn'
 import ChiTietMonAn from './pages/Home/ChiTietMonAn/ChiTietMonAn'
 import GioHang from './pages/Profile/GioHang/GioHang';
+import ThanhToan from './pages/Pay/ThanhToan/ThanhToan'
 
 const App = () => {
   return (
@@ -32,6 +33,7 @@ const App = () => {
           <Route path="/menu" element={<MenuMonAn />} />
           <Route path="/chi-tiet-mon-an/:id" element={<ChiTietMonAn />} />
            <Route path="/cart" element={<GioHang />} />
+           <Route path="/pay"element={<ThanhToan />} />
           
            
 
