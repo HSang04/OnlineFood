@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import axios from "../../../services/axiosInstance";
 import "./ThanhToan.css";
@@ -7,6 +7,8 @@ const ThanhToan = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
 
+  const [gioHang, setGioHang] = useState([]);
+  const [tongTienGoc, setTongTienGoc] = useState(0);
   const [diaChi, setDiaChi] = useState("");
   const [diaChiCu, setDiaChiCu] = useState("");
   const [voucher, setVoucher] = useState("");
@@ -19,24 +21,47 @@ const ThanhToan = () => {
   const nguoiDungId = localStorage.getItem("idNguoiDung");
   const jwt = localStorage.getItem("jwt");
 
-
-  const gioHang = state?.gioHang || [];
-  const tongTienGoc = state?.tongTien || 0;
-
- 
+  // Initialize data from state trong useEffect riêng
   useEffect(() => {
-    setTongTien(tongTienGoc);
-  }, [tongTienGoc]);
+    if (state?.gioHang) {
+      setGioHang(state.gioHang);
+    }
+    if (state?.tongTien || state?.thongKe?.tongTien) {
+      setTongTienGoc(state?.tongTien || state?.thongKe?.tongTien);
+    }
+  }, [state]);
 
+  // Memoize tinhGiaThucTe function với useCallback
+  const tinhGiaThucTe = useCallback((monAn) => {
+    if (monAn?.khuyenMai?.giaGiam && monAn.khuyenMai.giaGiam > 0) {
+      return monAn.khuyenMai.giaGiam;
+    }
+    return monAn?.gia || 0;
+  }, []);
 
+  // Set initial total - now with proper dependencies
+  useEffect(() => {
+    if (tongTienGoc > 0) {
+      setTongTien(tongTienGoc);
+    } else if (gioHang.length > 0) {
+      // Recalculate if tongTienGoc is not available
+      const calculatedTotal = gioHang.reduce((sum, item) => {
+        const gia = tinhGiaThucTe(item.monAn);
+        return sum + (gia * item.soLuong);
+      }, 0);
+      setTongTien(calculatedTotal);
+    }
+  }, [tongTienGoc, gioHang, tinhGiaThucTe]);
+
+  // Fetch user's saved address
   useEffect(() => {
     const fetchDiaChiCu = async () => {
       try {
-      const res = await axios.get(`/nguoi-dung/${nguoiDungId}`, {
-            headers: {
-                Authorization: `Bearer ${jwt}`,
-            },
-            });
+        const res = await axios.get(`/nguoi-dung/${nguoiDungId}`, {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        });
 
         const diaChiCuData = res.data?.diaChi || "";
         setDiaChiCu(diaChiCuData);
@@ -49,10 +74,10 @@ const ThanhToan = () => {
     if (nguoiDungId) {
       fetchDiaChiCu();
     }
-  }, [nguoiDungId]);
+  }, [nguoiDungId, jwt]);
 
-
-  if (!state || !state.gioHang || !state.tongTien) {
+  // Validation for required data
+  if (!state || !gioHang || gioHang.length === 0) {
     return (
       <div className="thanh-toan-container">
         <div className="error-container">
@@ -69,14 +94,31 @@ const ThanhToan = () => {
     );
   }
 
+  // Additional validation for data integrity
+  const hasValidItems = gioHang.every(item => 
+    item.monAnId && 
+    item.monAn && 
+    item.monAn.tenMonAn && 
+    item.soLuong > 0 &&
+    (item.monAn.gia > 0 || (item.monAn.khuyenMai && item.monAn.khuyenMai.giaGiam > 0))
+  );
 
-  const tinhGiaThucTe = (monAn) => {
-    if (monAn?.khuyenMai?.giaGiam && monAn.khuyenMai.giaGiam > 0) {
-      return monAn.khuyenMai.giaGiam;
-    }
-    return monAn?.gia || 0;
-  };
-
+  if (!hasValidItems) {
+    return (
+      <div className="thanh-toan-container">
+        <div className="error-container">
+          <h2>⚠️ Dữ liệu giỏ hàng không hợp lệ</h2>
+          <p>Có lỗi với dữ liệu giỏ hàng. Vui lòng quay lại và thử lại.</p>
+          <button 
+            className="btn-back-to-cart" 
+            onClick={() => navigate("/gio-hang")}
+          >
+            Quay lại giỏ hàng
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleCheckVoucher = async () => {
     if (!voucher.trim()) {
@@ -91,7 +133,6 @@ const ThanhToan = () => {
       const res = await axios.get(`/vouchers/find?ma=${voucher}`);
       const voucherInfo = res.data;
 
-    
       if (!voucherInfo) {
         setError("Mã voucher không tồn tại!");
         setLoading(false);
@@ -104,8 +145,8 @@ const ThanhToan = () => {
         return;
       }
 
- 
-      if (tongTienGoc < voucherInfo.giaToiThieu) {
+      const currentTongTien = tongTienGoc || tongTien;
+      if (currentTongTien < voucherInfo.giaToiThieu) {
         setError(`Voucher chỉ áp dụng cho đơn từ ${voucherInfo.giaToiThieu.toLocaleString()}₫`);
         setLoading(false);
         return;
@@ -113,17 +154,16 @@ const ThanhToan = () => {
 
       let giam = 0;
       if (voucherInfo.loai === "PHAN_TRAM") {
-        giam = Math.min((voucherInfo.giaTri / 100) * tongTienGoc, voucherInfo.giaTriToiDa || tongTienGoc);
+        giam = Math.min((voucherInfo.giaTri / 100) * currentTongTien, voucherInfo.giaTriToiDa || currentTongTien);
       } else if (voucherInfo.loai === "TIEN_MAT") {
         giam = voucherInfo.giaTri;
       }
 
-     
-      giam = Math.min(giam, tongTienGoc);
+      giam = Math.min(giam, currentTongTien);
 
       setVoucherData(voucherInfo);
       setGiamGia(giam);
-      setTongTien(tongTienGoc - giam);
+      setTongTien(currentTongTien - giam);
       setError("");
       alert("Áp dụng voucher thành công!");
 
@@ -135,12 +175,11 @@ const ThanhToan = () => {
     }
   };
 
-
   const handleRemoveVoucher = () => {
     setVoucher("");
     setVoucherData(null);
     setGiamGia(0);
-    setTongTien(tongTienGoc);
+    setTongTien(tongTienGoc || tongTien + giamGia);
     setError("");
   };
 
@@ -153,12 +192,16 @@ const ThanhToan = () => {
     try {
       setLoading(true);
       
-     
+      const finalTongTienGoc = tongTienGoc || gioHang.reduce((sum, item) => {
+        const gia = tinhGiaThucTe(item.monAn);
+        return sum + (gia * item.soLuong);
+      }, 0);
+      
       const donHangData = {
         nguoiDungId: parseInt(nguoiDungId),
         diaChiGiaoHang: diaChi,
         tongTien: tongTien,
-        tongTienGoc: tongTienGoc,
+        tongTienGoc: finalTongTienGoc,
         giamGia: giamGia,
         voucherId: voucherData?.id || null,
         chiTietDonHang: gioHang.map(item => ({
@@ -169,13 +212,19 @@ const ThanhToan = () => {
         }))
       };
 
+      console.log("Dữ liệu đặt hàng:", donHangData);
       
       const response = await axios.post('/don-hang/dat-hang', donHangData);
       
       if (response.data) {
         alert("Đặt hàng thành công!");
-       
-        await axios.delete(`/gio-hang/${nguoiDungId}/clear`);
+        
+        // Clear cart
+        try {
+          await axios.delete(`/gio-hang/${nguoiDungId}/clear`);
+        } catch (clearError) {
+          console.error("Lỗi khi xóa giỏ hàng:", clearError);
+        }
         
         navigate('/', { 
           state: { 
@@ -187,7 +236,8 @@ const ThanhToan = () => {
       
     } catch (err) {
       console.error("Lỗi khi đặt hàng:", err);
-      alert("Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!");
+      const errorMessage = err.response?.data?.message || "Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!";
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -197,7 +247,7 @@ const ThanhToan = () => {
     <div className="thanh-toan-container">
       <h2 className="page-title">🧾 Xác nhận thanh toán</h2>
 
-  
+      {/* Product list section */}
       <div className="section">
         <h3 className="section-title">Sản phẩm đã chọn</h3>
         <div className="product-list">
@@ -209,7 +259,7 @@ const ThanhToan = () => {
               <div key={item.id} className="product-item">
                 <div className="product-info">
                   <img 
-                    src={item.monAn?.hinhAnhMonAns?.[0]?.duongDan || "/default.jpg"}
+                    src={item.monAn?.hinhAnhMonAns?.[0]?.duongDan || item.monAn?.hinhAnhUrl || "/default.jpg"}
                     alt={item.monAn?.tenMonAn}
                     className="product-image"
                   />
@@ -218,6 +268,9 @@ const ThanhToan = () => {
                     <div className="product-price-quantity">
                       {giaThucTe.toLocaleString()}₫ x {item.soLuong}
                     </div>
+                    {item.monAn?.khuyenMai && (
+                      <div className="discount-badge">Có khuyến mãi</div>
+                    )}
                   </div>
                 </div>
                 <div className="item-total">
@@ -229,11 +282,12 @@ const ThanhToan = () => {
           
           <div className="subtotal">
             <span>Tạm tính:</span>
-            <span>{tongTienGoc.toLocaleString()}₫</span>
+            <span>{(tongTienGoc || tongTien + giamGia).toLocaleString()}₫</span>
           </div>
         </div>
       </div>
 
+      {/* Address section */}
       <div className="section">
         <h3 className="section-title">Địa chỉ nhận hàng</h3>
         <div className="address-section">
@@ -277,7 +331,7 @@ const ThanhToan = () => {
         </div>
       </div>
 
-  
+      {/* Voucher section */}
       <div className="section">
         <h3 className="section-title">Mã giảm giá</h3>
         <div className="voucher-section">
@@ -320,12 +374,12 @@ const ThanhToan = () => {
         </div>
       </div>
 
-     
+      {/* Total and action buttons */}
       <div className="section">
         <div className="total-section">
           <div className="total-row">
             <span>Tạm tính:</span>
-            <span>{tongTienGoc.toLocaleString()}₫</span>
+            <span>{(tongTienGoc || tongTien + giamGia).toLocaleString()}₫</span>
           </div>
           
           {giamGia > 0 && (

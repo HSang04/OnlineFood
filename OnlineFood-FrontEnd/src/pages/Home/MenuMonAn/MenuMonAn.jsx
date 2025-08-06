@@ -15,24 +15,25 @@ const MenuMonAn = () => {
 
   const navigate = useNavigate();
 
- 
-    const tinhPhanTramGiamGia = (giaGoc, giaGiam) => {
-      if (!giaGoc || !giaGiam || giaGiam <= 0 || giaGiam >= giaGoc) {
-        return 0;
-      }
-      return Math.round(100 - (giaGiam / giaGoc)*100 );
-    };
-
-
+  // Gọi API lấy danh sách món ăn đã có thông tin giá khuyến mãi từ backend
   const fetchMonAn = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/mon-an');
-      const activeItems = res.data.filter(mon => mon.trangThai === 1); 
-      setDsMonAn(activeItems);
-      setDsMonAnGoc(activeItems);
+      // Gọi endpoint trả về DTO đã tính toán giá và có hình ảnh
+      const res = await axios.get('/mon-an/active'); // Sử dụng endpoint mới
+      setDsMonAn(res.data);
+      setDsMonAnGoc(res.data);
     } catch (err) {
       console.error("Lỗi lấy danh sách món ăn:", err);
+      // Fallback về endpoint cũ nếu endpoint mới chưa sẵn sàng
+      try {
+        const res = await axios.get('/mon-an');
+        const activeItems = res.data.filter(mon => mon.trangThai === 1); 
+        setDsMonAn(activeItems);
+        setDsMonAnGoc(activeItems);
+      } catch (fallbackErr) {
+        console.error("Lỗi lấy danh sách món ăn (fallback):", fallbackErr);
+      }
     } finally {
       setLoading(false);
     }
@@ -55,6 +56,7 @@ const MenuMonAn = () => {
   const applyFilters = useCallback(() => {
     let filteredData = [...dsMonAnGoc];
 
+    // Lọc theo từ khóa
     if (keyword.trim()) {
       filteredData = filteredData.filter(mon =>
         mon.tenMonAn.toLowerCase().includes(keyword.toLowerCase()) ||
@@ -62,6 +64,7 @@ const MenuMonAn = () => {
       );
     }
 
+    // Lọc theo danh mục
     if (selectedCategory) {
       filteredData = filteredData.filter(mon => 
         mon.danhMuc?.id === selectedCategory || mon.danhMucId === selectedCategory ||
@@ -69,17 +72,22 @@ const MenuMonAn = () => {
       );
     }
 
+    // Sắp xếp
     if (sortBy) {
       filteredData = filteredData.sort((a, b) => {
         switch (sortBy) {
           case "gia-tang":
-            return a.gia - b.gia;
+            // Sắp xếp theo giá hiển thị (đã bao gồm khuyến mãi)
+            return a.giaKhuyenMai - b.giaKhuyenMai;
           case "gia-giam":
-            return b.gia - a.gia;
+            return b.giaKhuyenMai - a.giaKhuyenMai;
           case "ten-az":
             return a.tenMonAn.localeCompare(b.tenMonAn);
           case "ten-za":
             return b.tenMonAn.localeCompare(a.tenMonAn);
+          case "khuyen-mai":
+            // Món có khuyến mãi lên đầu
+            return b.coKhuyenMai - a.coKhuyenMai;
           default:
             return 0;
         }
@@ -103,13 +111,6 @@ const MenuMonAn = () => {
     setSelectedCategory("");
     setSortBy("");
   };
-
-  // const formatPrice = (price) => {
-  //   return new Intl.NumberFormat('vi-VN', {
-  //     style: 'currency',
-  //     currency: 'VND'
-  //   }).format(price);
-  // };
 
   return (
     <div className="restaurant-layout">
@@ -160,6 +161,7 @@ const MenuMonAn = () => {
                 <option value="gia-giam">Giá: Cao đến thấp</option>
                 <option value="ten-az">Tên: A-Z</option>
                 <option value="ten-za">Tên: Z-A</option>
+                <option value="khuyen-mai">Khuyến mãi hot</option>
               </select>
 
               {(selectedCategory || sortBy || keyword) && (
@@ -222,15 +224,13 @@ const MenuMonAn = () => {
 
               <div className="products-grid">
                 {dsMonAn.length > 0 ? (
-                  dsMonAn.map((mon) => {
-                    
-                    const discountPercentage = tinhPhanTramGiamGia(mon.gia, mon.khuyenMai?.giaGiam);
-                    
+                  dsMonAn.map((mon, index) => {
                     return (
-                      <div key={mon.id} className="product-card">
-                        {discountPercentage > 0 && (
+                      <div key={mon.id || `mon-${index}`} className="product-card">
+                       
+                        {mon.coKhuyenMai && mon.phanTramGiamGia > 0 && (
                           <div className="sale-badge">
-                            Giảm {discountPercentage}%
+                            Giảm {mon.phanTramGiamGia}%
                           </div>
                         )}
                         
@@ -265,18 +265,25 @@ const MenuMonAn = () => {
                             {mon.tenMonAn}
                           </h3>
                           
-                     <div className="price-section" style={{ textAlign: "center" }}>
-                            {mon.khuyenMai?.giaGiam ? (
+                          {/* Hiển thị giá đã được tính toán từ backend */}
+                          <div className="price-section" style={{ textAlign: "center" }}>
+                            {mon.coKhuyenMai ? (
                               <div>
                                 <div style={{ color: "red", fontWeight: "bold", fontSize: "26px" }}>
-                                  {mon.khuyenMai.giaGiam.toLocaleString()} đ
+                                  {mon.giaKhuyenMai.toLocaleString()} đ
                                 </div>
                                 <div style={{ textDecoration: "line-through", color: "gray", fontSize: "15px" }}>
                                   {mon.gia.toLocaleString()} đ
                                 </div>
+                                
+                                {/* <div style={{ color: "green", fontSize: "12px", fontStyle: "italic" }}>
+                                  Tiết kiệm: {(mon.gia - mon.giaKhuyenMai).toLocaleString()} đ
+                                </div> */}
                               </div>
                             ) : (
-                              <div style={{ fontSize: "30px" ,color: "gray"}}>{mon.gia.toLocaleString()} đ</div>
+                              <div style={{ fontSize: "30px", color: "gray" }}>
+                                {mon.gia.toLocaleString()} đ
+                              </div>
                             )}
                           </div>
 
@@ -309,6 +316,9 @@ const MenuMonAn = () => {
               {dsMonAn.length > 0 && (
                 <div className="results-info">
                   <p>Hiển thị {dsMonAn.length} món ăn</p>
+                  <p>
+                    {dsMonAn.filter(mon => mon.coKhuyenMai).length} món đang có khuyến mãi
+                  </p>
                 </div>
               )}
             </div>

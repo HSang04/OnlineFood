@@ -1,67 +1,160 @@
+/* GioHang.css - Updated styles */
 
 .gio-hang-container {
-  padding: 20px;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.gio-hang-container h2 {
+  color: #333;
+  margin-bottom: 30px;
+  text-align: center;
+  font-size: 2rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 50px;
+  font-size: 1.1rem;
+  color: #666;
+}
+
+/* Empty cart styles */
+.gio-hang-empty {
+  text-align: center;
+  padding: 50px;
+}
+
+.gio-hang-empty p {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+/* Summary section */
+.gio-hang-summary {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 25px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.summary-item.savings {
+  background: #e8f5e8;
+  color: #2e7d32;
+  font-weight: bold;
+}
+
+/* Table styles */
 .gio-hang-table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 20px;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 25px;
 }
 
 .gio-hang-table th,
 .gio-hang-table td {
-  border: 1px solid #ddd;
-  padding: 10px;
+  padding: 15px 10px;
   text-align: center;
+  border-bottom: 1px solid #eee;
 }
 
+.gio-hang-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #495057;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.gio-hang-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Image styles */
 .gio-hang-img {
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   object-fit: cover;
   border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.btn-xoa,
-.btn-xoa-all {
-  background-color: #ff4d4d;
+/* Product info styles */
+.mon-an-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ten-mon {
+  font-weight: 600;
+  color: #333;
+  font-size: 1rem;
+}
+
+.khuyen-mai-badge {
+  background: #ff4757;
   color: white;
-  padding: 6px 12px;
-  border: none;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.btn-xoa:hover,
-.btn-xoa-all:hover {
-  background-color: #cc0000;
-}
-
-.gio-hang-footer {
- background-color: #28a745;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
   font-weight: bold;
-  transition: background-color 0.3s;
 }
 
-.gio-hang-footer:hover
-{
-  background-color: #218838;
+/* Price styles */
+.gia-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 
+.gia-khuyen-mai {
+  color: #e74c3c;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
 
+.gia-goc {
+  color: #95a5a6;
+  text-decoration: line-through;
+  font-size: 0.9rem;
+}
+
+.gia-binh-thuong {
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Quantity controls */
 .quantity-controls {
   display: flex;
   align-items: center;
-  gap: 5px;
   justify-content: center;
+  gap: 8px;
+  position: relative;
 }
 
 .btn-quantity {
@@ -69,42 +162,40 @@
   height: 30px;
   border: 1px solid #ddd;
   background: #f8f9fa;
-  cursor: pointer;
   border-radius: 4px;
+  cursor: pointer;
   font-weight: bold;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
 }
 
 .btn-quantity:hover:not(:disabled) {
   background: #007bff;
   color: white;
   border-color: #007bff;
+  transform: translateY(-1px);
+}
+
+.btn-quantity:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .btn-quantity:disabled {
-  background: #e9ecef;
-  color: #6c757d;
-  cursor: not-allowed;
   opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .quantity-input {
-  width: 50px;
-  height: 30px;
+  width: 60px;
   text-align: center;
   border: 1px solid #ddd;
   border-radius: 4px;
-  font-size: 14px;
-
-}
-
-.quantity-input::-webkit-outer-spin-button,
-.quantity-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+  padding: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
 }
 
 .quantity-input:focus {
@@ -113,22 +204,219 @@
   box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
 }
 
+.quantity-input:disabled {
+  background-color: #e9ecef;
+  opacity: 0.7;
+}
 
+.quantity-input.updating {
+  border-color: #ffc107;
+  background-color: #fff3cd;
+}
+
+.quantity-updating {
+  position: absolute;
+  right: -25px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Amount styles */
+.thanh-tien {
+  font-weight: bold;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.tiet-kiem {
+  color: #27ae60;
+  font-weight: bold;
+}
+
+.no-saving {
+  color: #bdc3c7;
+}
+
+/* Action buttons */
+.btn-xoa {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  transition: background 0.2s;
+}
+
+.btn-xoa:hover {
+  background: #c0392b;
+}
+
+/* Footer section */
+.gio-hang-footer {
+  background: white;
+  border-radius: 8px;
+  padding: 25px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tong-ket {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.tong-tien-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tiet-kiem-tong {
+  font-size: 1.1rem;
+  color: #27ae60;
+}
+
+.so-tien-tiet-kiem {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.tong-thanh-toan {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #2c3e50;
+}
+
+.so-tien-tong {
+  color: #e74c3c;
+  font-size: 1.5rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.btn-primary,
+.btn-xoa-all,
+.btn-dat-hang {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+  transform: translateY(-2px);
+}
+
+.btn-xoa-all {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-xoa-all:hover {
+  background: #545b62;
+}
+
+.btn-dat-hang {
+  background: #28a745;
+  color: white;
+  font-size: 1.1rem;
+  padding: 15px 30px;
+}
+
+.btn-dat-hang:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.btn-dat-hang:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Responsive design */
 @media (max-width: 768px) {
-  .quantity-controls {
-    flex-direction: row;
-    gap: 3px;
+  .gio-hang-container {
+    padding: 10px;
   }
   
-  .btn-quantity {
-    width: 25px;
-    height: 25px;
-    font-size: 12px;
+  .gio-hang-table {
+    font-size: 0.9rem;
   }
   
-  .quantity-input {
-    width: 40px;
-    height: 25px;
-    font-size: 12px;
+  .gio-hang-table th,
+  .gio-hang-table td {
+    padding: 8px 5px;
+  }
+  
+  .gio-hang-img {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .tong-ket {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .action-buttons {
+    justify-content: center;
+  }
+  
+  .gio-hang-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .gio-hang-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .btn-dat-hang,
+  .btn-xoa-all {
+    width: 100%;
   }
 }

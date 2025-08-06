@@ -122,11 +122,110 @@ public class MonAnService {
         hinhAnhMonAnRepository.deleteById(imageId);
     }
 
-  
+    /**
+     * Lấy giá bán thực tế sau khi áp dụng khuyến mãi (nếu có)
+     * @param monAn món ăn cần tính giá
+     * @return giá bán sau khuyến mãi hoặc giá gốc nếu không có khuyến mãi
+     */
     public double getGiaBan(MonAn monAn) {
-        if (monAn.getKhuyenMai() != null && monAn.getKhuyenMai().getGiaGiam() > 0) {
+        // Kiểm tra xem có khuyến mãi không và khuyến mãi có hợp lệ không
+        if (monAn.getKhuyenMai() != null && 
+            monAn.getKhuyenMai().getGiaGiam() > 0 && 
+            monAn.getKhuyenMai().getGiaGiam() < monAn.getGia()) {
             return monAn.getKhuyenMai().getGiaGiam();
         }
         return monAn.getGia();
+    }
+    
+    /**
+     * Kiểm tra xem món ăn có đang được khuyến mãi không
+     * @param monAn món ăn cần kiểm tra
+     * @return true nếu có khuyến mãi hợp lệ
+     */
+    public boolean isOnSale(MonAn monAn) {
+        return monAn.getKhuyenMai() != null && 
+               monAn.getKhuyenMai().getGiaGiam() > 0 && 
+               monAn.getKhuyenMai().getGiaGiam() < monAn.getGia();
+    }
+    
+    /**
+     * Tính phần trăm giảm giá
+     * @param monAn món ăn cần tính
+     * @return phần trăm giảm giá (0-100), 0 nếu không có khuyến mãi
+     */
+    public int getPhanTramGiamGia(MonAn monAn) {
+        if (!isOnSale(monAn)) {
+            return 0;
+        }
+        
+        double giaGoc = monAn.getGia();
+        double giaGiam = monAn.getKhuyenMai().getGiaGiam();
+        return (int) Math.round(((giaGoc - giaGiam) / giaGoc) * 100);
+    }
+    
+    /**
+     * Convert MonAn entity sang DTO với đầy đủ thông tin giá
+     * @param monAn entity cần convert
+     * @return DTO với thông tin giá đã được tính toán
+     */
+    public MonAnDTO convertToDto(MonAn monAn) {
+        MonAnDTO dto = new MonAnDTO();
+        dto.setId(monAn.getId());
+        dto.setTenMonAn(monAn.getTenMonAn());
+        dto.setGia(monAn.getGia()); // Giá gốc
+        dto.setMoTa(monAn.getMoTa());
+        dto.setTrangThai(monAn.getTrangThai());
+        dto.setDanhMuc(monAn.getDanhMuc());
+        
+        // Thông tin hình ảnh
+        dto.setHinhAnhMonAns(monAn.getHinhAnhMonAns());
+        
+        // Thông tin giá khuyến mãi
+        dto.setGiaKhuyenMai(getGiaBan(monAn)); // Giá thực tế cần thanh toán
+        dto.setCoKhuyenMai(isOnSale(monAn));
+        dto.setPhanTramGiamGia(getPhanTramGiamGia(monAn));
+        
+        return dto;
+    }
+    
+    /**
+     * Lấy danh sách món ăn đã convert sang DTO với hình ảnh
+     * @return danh sách MonAnDTO với thông tin giá đã tính toán và hình ảnh
+     */
+    public List<MonAnDTO> getAllDTOs() {
+        return monAnRepository.findAll()
+                .stream()
+                .map(monAn -> {
+                    // Trigger lazy loading cho hình ảnh
+                    monAn.getHinhAnhMonAns().size();
+                    return convertToDto(monAn);
+                })
+                .toList();
+    }
+    
+    /**
+     * Lấy danh sách món ăn đang hoạt động đã convert sang DTO
+     * @return danh sách MonAnDTO với trạng thái = 1
+     */
+    public List<MonAnDTO> getActiveDTOs() {
+        return monAnRepository.findAll()
+                .stream()
+                .filter(monAn -> monAn.getTrangThai() == 1)
+                .map(monAn -> {
+                    // Trigger lazy loading cho hình ảnh
+                    monAn.getHinhAnhMonAns().size();
+                    return convertToDto(monAn);
+                })
+                .toList();
+    }
+    
+    /**
+     * Lấy món ăn theo ID và convert sang DTO
+     * @param id ID của món ăn
+     * @return Optional<MonAnDTO> với thông tin giá đã tính toán
+     */
+    public Optional<MonAnDTO> getDTOById(Long id) {
+        return monAnRepository.findById(id)
+                .map(this::convertToDto);
     }
 }

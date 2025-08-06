@@ -15,12 +15,13 @@ const ChiTietMonAn = () => {
   const fetchChiTietMonAn = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`/mon-an/${id}`);
+    
+      const res = await axios.get(`/mon-an/${id}/dto`);
       setMonAn(res.data);
       
-      // Lấy món ăn liên quan cùng danh mục
+     
       if (res.data.danhMuc?.id) {
-        const relatedRes = await axios.get(`/mon-an/search?danhMuc=${res.data.danhMuc.id}`);
+        const relatedRes = await axios.get(`/mon-an/category/${res.data.danhMuc.id}`);
         setDsMonAnLienQuan(relatedRes.data.filter(item => item.id !== parseInt(id)).slice(0, 4));
       }
     } catch (err) {
@@ -43,7 +44,7 @@ const ChiTietMonAn = () => {
   };
 
   const handleAddToCart = async () => {
-  const idNguoiDung = localStorage.getItem("idNguoiDung"); // hoặc context.auth.userId
+    const idNguoiDung = localStorage.getItem("idNguoiDung");
 
     if (!idNguoiDung) {
       alert("Bạn cần đăng nhập trước khi thêm vào giỏ hàng.");
@@ -65,11 +66,43 @@ const ChiTietMonAn = () => {
     }
   };
 
+
+  const handleBuyNow = async () => {
+    const idNguoiDung = localStorage.getItem("idNguoiDung");
+
+    if (!idNguoiDung) {
+      alert("Bạn cần đăng nhập trước khi đặt hàng.");
+      return;
+    }
+
+    try {
+     
+      await axios.post(`/gio-hang/${idNguoiDung}/add`, null, {
+        params: {
+          monAnId: monAn.id,
+          soLuong: quantity
+        }
+      });
+
+     
+      navigate('/cart');
+    } catch (error) {
+      console.error("Lỗi đặt hàng:", error);
+      alert("Đặt hàng thất bại.");
+    }
+  };
+
   const formatPrice = (price) => {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND'
     }).format(price);
+  };
+
+  
+  const calculateTotalPrice = () => {
+    const giaHienThi = monAn.coKhuyenMai ? monAn.giaKhuyenMai : monAn.gia;
+    return giaHienThi * quantity;
   };
 
   if (loading) {
@@ -95,7 +128,7 @@ const ChiTietMonAn = () => {
 
   return (
     <div className="chi-tiet-container">
-      {/* Breadcrumb */}
+   
       <div className="breadcrumb">
         <span onClick={() => navigate('/menu')} className="breadcrumb-item">
           Menu
@@ -105,7 +138,7 @@ const ChiTietMonAn = () => {
       </div>
 
       <div className="chi-tiet-content">
-        {/* Hình ảnh món ăn */}
+     
         <div className="image-section">
           <div className="main-image">
             {monAn.hinhAnhMonAns && monAn.hinhAnhMonAns.length > 0 ? (
@@ -137,7 +170,7 @@ const ChiTietMonAn = () => {
           )}
         </div>
 
-        {/* Thông tin món ăn */}
+    
         <div className="info-section">
           <div className="dish-header">
             <h1 className="dish-title">{monAn.tenMonAn}</h1>
@@ -146,8 +179,32 @@ const ChiTietMonAn = () => {
             </span>
           </div>
 
+      
           <div className="price-section">
-            <span className="current-price">{formatPrice(monAn.gia)}</span>
+            {monAn.coKhuyenMai ? (
+              <div className="price-with-promotion">
+                <div className="price-row">
+                  <span className="current-price">
+                    {formatPrice(monAn.giaKhuyenMai)}
+                  </span>
+                  <span className="original-price">
+                    {formatPrice(monAn.gia)}
+                  </span>
+                </div>
+                <div className="discount-info">
+                  <span className="discount-badge">
+                    -{monAn.phanTramGiamGia}%
+                  </span>
+                  <span className="savings-text">
+                    Tiết kiệm: {formatPrice(monAn.soTienTietKiem || (monAn.gia - monAn.giaKhuyenMai))}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <span className="current-price">
+                {formatPrice(monAn.gia)}
+              </span>
+            )}
           </div>
 
           <div className="description-section">
@@ -157,7 +214,7 @@ const ChiTietMonAn = () => {
             </p>
           </div>
 
-          {/* Quantity và Add to Cart */}
+       
           <div className="order-section">
             <div className="quantity-selector">
               <label>Số lượng:</label>
@@ -181,7 +238,12 @@ const ChiTietMonAn = () => {
 
             <div className="total-price">
               <span>Tổng cộng: </span>
-              <span className="total-amount">{formatPrice(monAn.gia * quantity)}</span>
+              <span className="total-amount">{formatPrice(calculateTotalPrice())}</span>
+              {monAn.coKhuyenMai && (
+                <div className="total-savings" style={{ fontSize: "0.9rem", color: "#28a745", marginTop: "5px" }}>
+                  (Tiết kiệm: {formatPrice((monAn.gia - monAn.giaKhuyenMai) * quantity)})
+                </div>
+              )}
             </div>
 
             <div className="action-buttons">
@@ -189,7 +251,7 @@ const ChiTietMonAn = () => {
                 <i className="fas fa-cart-plus"></i>
                 Thêm vào giỏ hàng
               </button>
-              <button className="buy-now-btn">
+              <button onClick={handleBuyNow} className="buy-now-btn">
                 <i className="fas fa-bolt"></i>
                 Đặt ngay
               </button>
@@ -198,7 +260,7 @@ const ChiTietMonAn = () => {
         </div>
       </div>
 
-      {/* Món ăn liên quan */}
+    
       {dsMonAnLienQuan.length > 0 && (
         <div className="related-section">
           <h2 className="related-title">Món ăn liên quan</h2>
@@ -223,7 +285,38 @@ const ChiTietMonAn = () => {
                 </div>
                 <div className="related-info">
                   <h4 className="related-name">{mon.tenMonAn}</h4>
-                  <span className="related-price">{formatPrice(mon.gia)}</span>
+                  <div className="related-price-section">
+                    {mon.coKhuyenMai ? (
+                      <>
+                        <span className="related-current-price" style={{ color: "red", fontWeight: "bold" }}>
+                          {formatPrice(mon.giaKhuyenMai)}
+                        </span>
+                        <span className="related-original-price" style={{ 
+                          textDecoration: "line-through", 
+                          color: "gray", 
+                          marginLeft: "5px", 
+                          fontSize: "12px" 
+                        }}>
+                          {formatPrice(mon.gia)}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="related-price">{formatPrice(mon.gia)}</span>
+                    )}
+                  </div>
+                  {mon.coKhuyenMai && (
+                    <div className="related-discount-badge" style={{ 
+                      backgroundColor: "red", 
+                      color: "white", 
+                      padding: "2px 6px", 
+                      borderRadius: "3px", 
+                      fontSize: "10px",
+                      marginTop: "4px",
+                      display: "inline-block"
+                    }}>
+                      -{mon.phanTramGiamGia}%
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -231,7 +324,7 @@ const ChiTietMonAn = () => {
         </div>
       )}
 
-      {/* Back to menu button */}
+    
       <div className="back-to-menu">
         <button 
           onClick={() => navigate('/menu')} 
