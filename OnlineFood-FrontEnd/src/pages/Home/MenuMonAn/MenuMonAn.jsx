@@ -77,7 +77,7 @@ const MenuMonAn = () => {
       filteredData = filteredData.sort((a, b) => {
         switch (sortBy) {
           case "gia-tang":
-            // Sắp xếp theo giá hiển thị (đã bao gồm khuyến mãi)
+           
             return a.giaKhuyenMai - b.giaKhuyenMai;
           case "gia-giam":
             return b.giaKhuyenMai - a.giaKhuyenMai;
@@ -86,7 +86,7 @@ const MenuMonAn = () => {
           case "ten-za":
             return b.tenMonAn.localeCompare(a.tenMonAn);
           case "khuyen-mai":
-            // Món có khuyến mãi lên đầu
+          
             return b.coKhuyenMai - a.coKhuyenMai;
           default:
             return 0;
@@ -114,7 +114,7 @@ const MenuMonAn = () => {
 
   return (
     <div className="restaurant-layout">
-      {/* Header với thanh tìm kiếm */}
+     
       <div className="top-header">
         <div className="container">
           <div className="header-content">
@@ -206,7 +206,7 @@ const MenuMonAn = () => {
               </div>
             </div>
 
-            {/* Overlay cho mobile */}
+            
             {sidebarOpen && (
               <div 
                 className="sidebar-overlay"
@@ -265,7 +265,7 @@ const MenuMonAn = () => {
                             {mon.tenMonAn}
                           </h3>
                           
-                          {/* Hiển thị giá đã được tính toán từ backend */}
+                       
                           <div className="price-section" style={{ textAlign: "center" }}>
                             {mon.coKhuyenMai ? (
                               <div>
@@ -312,7 +312,7 @@ const MenuMonAn = () => {
                 )}
               </div>
 
-              {/* Hiển thị số lượng kết quả */}
+            
               {dsMonAn.length > 0 && (
                 <div className="results-info">
                   <p>Hiển thị {dsMonAn.length} món ăn</p>

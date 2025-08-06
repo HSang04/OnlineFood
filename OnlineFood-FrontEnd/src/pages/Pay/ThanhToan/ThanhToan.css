@@ -6,6 +6,11 @@
   line-height: 1.6;
 }
 
+.thanh-toan-container .address-label strong {
+  font-weight: normal;  
+  font-family: 'Segoe UI', sans-serif; 
+}
+
 .thanh-toan-container .page-title {
   color: #2c3e50;
   text-align: center;
@@ -138,7 +143,7 @@
   color: #2d3748;
 }
 
-/* Address Section Styles */
+
 .thanh-toan-container .address-section {
   background-color: #f8f9fa;
   border-radius: 8px;
@@ -461,4 +466,20 @@
   .thanh-toan-container .subtotal {
     font-size: 16px;
   }
+  .distance-section {
+  margin-top: 12px;
+}
+.btn-calc-distance {
+  padding: 8px 12px;
+  background-color: #3182ce;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.distance-result {
+  margin-top: 8px;
+  color: #2d3748;
+}
+
 }

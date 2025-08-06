@@ -17,11 +17,12 @@ const ThanhToan = () => {
   const [tongTien, setTongTien] = useState(0); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [khoangCach, setKhoangCach] = useState(null);
 
   const nguoiDungId = localStorage.getItem("idNguoiDung");
   const jwt = localStorage.getItem("jwt");
 
-  // Initialize data from state trong useEffect riêng
+ 
   useEffect(() => {
     if (state?.gioHang) {
       setGioHang(state.gioHang);
@@ -31,7 +32,7 @@ const ThanhToan = () => {
     }
   }, [state]);
 
-  // Memoize tinhGiaThucTe function với useCallback
+ 
   const tinhGiaThucTe = useCallback((monAn) => {
     if (monAn?.khuyenMai?.giaGiam && monAn.khuyenMai.giaGiam > 0) {
       return monAn.khuyenMai.giaGiam;
@@ -39,12 +40,11 @@ const ThanhToan = () => {
     return monAn?.gia || 0;
   }, []);
 
-  // Set initial total - now with proper dependencies
   useEffect(() => {
     if (tongTienGoc > 0) {
       setTongTien(tongTienGoc);
     } else if (gioHang.length > 0) {
-      // Recalculate if tongTienGoc is not available
+   
       const calculatedTotal = gioHang.reduce((sum, item) => {
         const gia = tinhGiaThucTe(item.monAn);
         return sum + (gia * item.soLuong);
@@ -53,7 +53,7 @@ const ThanhToan = () => {
     }
   }, [tongTienGoc, gioHang, tinhGiaThucTe]);
 
-  // Fetch user's saved address
+
   useEffect(() => {
     const fetchDiaChiCu = async () => {
       try {
@@ -76,7 +76,7 @@ const ThanhToan = () => {
     }
   }, [nguoiDungId, jwt]);
 
-  // Validation for required data
+
   if (!state || !gioHang || gioHang.length === 0) {
     return (
       <div className="thanh-toan-container">
@@ -94,7 +94,7 @@ const ThanhToan = () => {
     );
   }
 
-  // Additional validation for data integrity
+  
   const hasValidItems = gioHang.every(item => 
     item.monAnId && 
     item.monAn && 
@@ -125,6 +125,9 @@ const ThanhToan = () => {
       setError("Vui lòng nhập mã voucher");
       return;
     }
+
+    
+
 
     setLoading(true);
     setError("");
@@ -174,6 +177,32 @@ const ThanhToan = () => {
       setLoading(false);
     }
   };
+const handleTinhKhoangCach = async () => {
+  if (!diaChi.trim()) {
+    alert("Vui lòng nhập địa chỉ");
+    return;
+  }
+
+  try {
+   console.log( diaChi);
+    const res = await axios.get("/khoang-cach/dia-chi", {
+      params: { diaChi: diaChi },
+    });
+    console.log( res.data);
+
+    if (res.data && res.data.khoangCach_km !== undefined) {
+      setKhoangCach(res.data.khoangCach_km);
+    } else {
+      setKhoangCach(null);
+      alert("Không thể tính khoảng cách. Vui lòng thử lại.");
+    }
+  } catch (err) {
+    console.error("Lỗi khi tính khoảng cách:", err);
+    alert("Đã xảy ra lỗi khi tính khoảng cách.");
+    setKhoangCach(null);
+  }
+};
+
 
   const handleRemoveVoucher = () => {
     setVoucher("");
@@ -302,7 +331,7 @@ const ThanhToan = () => {
                 className="radio-input"
               />
               <div className="address-label">
-                <strong>Sử dụng địa chỉ đã lưu:</strong>
+                <span>Sử dụng địa chỉ mặc định:</span>
                 <span className="saved-address">{diaChiCu}</span>
               </div>
             </label>
@@ -317,7 +346,7 @@ const ThanhToan = () => {
               checked={diaChi !== diaChiCu}
               className="radio-input"
             />
-            <strong>Nhập địa chỉ mới:</strong>
+            <span>Nhập địa chỉ mới:</span>
           </label>
           
           <input
@@ -330,6 +359,23 @@ const ThanhToan = () => {
           />
         </div>
       </div>
+
+      <div className="distance-section">
+          <button 
+            className="btn-calc-distance"
+            onClick={handleTinhKhoangCach}
+            disabled={!diaChi.trim()}
+          >
+            Tính khoảng cách đến quán
+          </button>
+
+          {khoangCach !== null && (
+            <p className="distance-result">
+              Khoảng cách đến quán: <strong>{khoangCach.toFixed(2)} km</strong>
+            </p>
+          )}
+        </div>
+
 
       {/* Voucher section */}
       <div className="section">
