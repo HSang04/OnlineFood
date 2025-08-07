@@ -11,18 +11,17 @@ const ThanhToan = () => {
   const [tongTienGoc, setTongTienGoc] = useState(0);
   const [diaChi, setDiaChi] = useState("");
   const [diaChiCu, setDiaChiCu] = useState("");
+  const [ghiChu, setGhiChu] = useState("");
   const [voucher, setVoucher] = useState("");
   const [voucherData, setVoucherData] = useState(null);
   const [giamGia, setGiamGia] = useState(0);
   const [tongTien, setTongTien] = useState(0); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [khoangCach, setKhoangCach] = useState(null);
 
   const nguoiDungId = localStorage.getItem("idNguoiDung");
   const jwt = localStorage.getItem("jwt");
 
- 
   useEffect(() => {
     if (state?.gioHang) {
       setGioHang(state.gioHang);
@@ -32,7 +31,6 @@ const ThanhToan = () => {
     }
   }, [state]);
 
- 
   const tinhGiaThucTe = useCallback((monAn) => {
     if (monAn?.khuyenMai?.giaGiam && monAn.khuyenMai.giaGiam > 0) {
       return monAn.khuyenMai.giaGiam;
@@ -44,7 +42,6 @@ const ThanhToan = () => {
     if (tongTienGoc > 0) {
       setTongTien(tongTienGoc);
     } else if (gioHang.length > 0) {
-   
       const calculatedTotal = gioHang.reduce((sum, item) => {
         const gia = tinhGiaThucTe(item.monAn);
         return sum + (gia * item.soLuong);
@@ -52,7 +49,6 @@ const ThanhToan = () => {
       setTongTien(calculatedTotal);
     }
   }, [tongTienGoc, gioHang, tinhGiaThucTe]);
-
 
   useEffect(() => {
     const fetchDiaChiCu = async () => {
@@ -76,7 +72,6 @@ const ThanhToan = () => {
     }
   }, [nguoiDungId, jwt]);
 
-
   if (!state || !gioHang || gioHang.length === 0) {
     return (
       <div className="thanh-toan-container">
@@ -94,7 +89,6 @@ const ThanhToan = () => {
     );
   }
 
-  
   const hasValidItems = gioHang.every(item => 
     item.monAnId && 
     item.monAn && 
@@ -125,9 +119,6 @@ const ThanhToan = () => {
       setError("Vui lòng nhập mã voucher");
       return;
     }
-
-    
-
 
     setLoading(true);
     setError("");
@@ -177,32 +168,6 @@ const ThanhToan = () => {
       setLoading(false);
     }
   };
-const handleTinhKhoangCach = async () => {
-  if (!diaChi.trim()) {
-    alert("Vui lòng nhập địa chỉ");
-    return;
-  }
-
-  try {
-   console.log( diaChi);
-    const res = await axios.get("/khoang-cach/dia-chi", {
-      params: { diaChi: diaChi },
-    });
-    console.log( res.data);
-
-    if (res.data && res.data.khoangCach_km !== undefined) {
-      setKhoangCach(res.data.khoangCach_km);
-    } else {
-      setKhoangCach(null);
-      alert("Không thể tính khoảng cách. Vui lòng thử lại.");
-    }
-  } catch (err) {
-    console.error("Lỗi khi tính khoảng cách:", err);
-    alert("Đã xảy ra lỗi khi tính khoảng cách.");
-    setKhoangCach(null);
-  }
-};
-
 
   const handleRemoveVoucher = () => {
     setVoucher("");
@@ -218,9 +183,52 @@ const handleTinhKhoangCach = async () => {
       return;
     }
 
+    setLoading(true);
+
     try {
-      setLoading(true);
+     
+      console.log("Đang kiểm tra khoảng cách giao hàng...");
+      const distanceRes = await axios.get("/khoang-cach/dia-chi", {
+        params: { diaChi: diaChi },
+      });
+
+      if (!distanceRes.data || distanceRes.data.khoangCach_km === undefined) {
+        alert("Không thể xác định khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
+        setLoading(false);
+        return;
+      }
+
+      const khoangCach = distanceRes.data.khoangCach_km;
+      console.log(`Khoảng cách: ${khoangCach} km`);
+
+     
+      if (khoangCach > 20) {
+        alert(
+          `Rất tiếc, địa chỉ của quý khách (cách ${khoangCach.toFixed(1)} km) nằm ngoài phạm vi giao hàng của chúng tôi.\n\n` +
+          "Để đảm bảo chất lượng và độ tươi ngon tốt nhất của thực phẩm, chúng tôi chỉ phục vụ trong bán kính 20km.\n\n" +
+          "Xin quý khách vui lòng thông cảm và cân nhắc đặt hàng tại địa chỉ gần hơn!"
+        );
+        setLoading(false);
+        return;
+      }
+
       
+      const confirmOrder = window.confirm(
+        `Xác nhận đặt hàng:\n\n` +
+        `• Địa chỉ giao hàng: ${diaChi}\n` +
+        `• Khoảng cách: ${khoangCach.toFixed(1)} km\n` +
+        `• Thời gian giao hàng dự kiến: ${Math.ceil(khoangCach * 2 + 20)} phút\n` +
+        `${ghiChu.trim() ? `• Ghi chú: ${ghiChu}\n` : ''}` +
+        `• Tổng tiền: ${tongTien.toLocaleString()}₫\n\n` +
+        `Bạn có muốn tiếp tục đặt hàng không?`
+      );
+
+      if (!confirmOrder) {
+        setLoading(false);
+        return;
+      }
+
+      // Bước 4: Thực hiện đặt hàng
       const finalTongTienGoc = tongTienGoc || gioHang.reduce((sum, item) => {
         const gia = tinhGiaThucTe(item.monAn);
         return sum + (gia * item.soLuong);
@@ -229,10 +237,12 @@ const handleTinhKhoangCach = async () => {
       const donHangData = {
         nguoiDungId: parseInt(nguoiDungId),
         diaChiGiaoHang: diaChi,
+        ghiChu: ghiChu.trim() || null,
         tongTien: tongTien,
         tongTienGoc: finalTongTienGoc,
         giamGia: giamGia,
         voucherId: voucherData?.id || null,
+        khoangCach: khoangCach,
         chiTietDonHang: gioHang.map(item => ({
           monAnId: item.monAnId,
           soLuong: item.soLuong,
@@ -248,7 +258,7 @@ const handleTinhKhoangCach = async () => {
       if (response.data) {
         alert("Đặt hàng thành công!");
         
-        // Clear cart
+        // Xóa giỏ hàng
         try {
           await axios.delete(`/gio-hang/${nguoiDungId}/clear`);
         } catch (clearError) {
@@ -265,8 +275,13 @@ const handleTinhKhoangCach = async () => {
       
     } catch (err) {
       console.error("Lỗi khi đặt hàng:", err);
-      const errorMessage = err.response?.data?.message || "Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!";
-      alert(errorMessage);
+      
+      if (err.response?.status === 400 && err.response?.data?.message?.includes("khoảng cách")) {
+        alert("Lỗi khi tính khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
+      } else {
+        const errorMessage = err.response?.data?.message || "Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!";
+        alert(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -276,7 +291,7 @@ const handleTinhKhoangCach = async () => {
     <div className="thanh-toan-container">
       <h2 className="page-title">🧾 Xác nhận thanh toán</h2>
 
-      {/* Product list section */}
+      {/* Product List Section */}
       <div className="section">
         <h3 className="section-title">Sản phẩm đã chọn</h3>
         <div className="product-list">
@@ -316,7 +331,7 @@ const handleTinhKhoangCach = async () => {
         </div>
       </div>
 
-      {/* Address section */}
+      {/* Address Section */}
       <div className="section">
         <h3 className="section-title">Địa chỉ nhận hàng</h3>
         <div className="address-section">
@@ -360,24 +375,44 @@ const handleTinhKhoangCach = async () => {
         </div>
       </div>
 
-      <div className="distance-section">
-          <button 
-            className="btn-calc-distance"
-            onClick={handleTinhKhoangCach}
-            disabled={!diaChi.trim()}
-          >
-            Tính khoảng cách đến quán
-          </button>
-
-          {khoangCach !== null && (
-            <p className="distance-result">
-              Khoảng cách đến quán: <strong>{khoangCach.toFixed(2)} km</strong>
-            </p>
-          )}
+      {/* Note Section */}
+      <div className="section">
+        <h3 className="section-title">📝 Ghi chú đơn hàng</h3>
+        <div className="note-section">
+          <textarea
+            value={ghiChu}
+            onChange={(e) => setGhiChu(e.target.value)}
+            placeholder="Nhập ghi chú cho đơn hàng (nếu có)..."
+            className="note-textarea"
+            maxLength={500}
+            rows={4}
+          />
+         
         </div>
+      </div>
 
+      {/* Delivery Note Section */}
+      <div className="section">
+        <h3 className="section-title">📦 Thông tin giao hàng</h3>
+        <div className="delivery-info">
+          <div className="delivery-note">
+            <div className="note-item">
+              <span className="note-icon">🚚</span>
+              <span>Phạm vi giao hàng: Trong bán kính 20km từ cửa hàng</span>
+            </div>
+            <div className="note-item">
+              <span className="note-icon">⏰</span>
+              <span>Thời gian giao hàng: Từ 30-60 phút tùy khoảng cách</span>
+            </div>
+            <div className="note-item">
+              <span className="note-icon">💡</span>
+              <span>Khoảng cách và thời gian giao hàng sẽ được tính toán khi đặt hàng</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      {/* Voucher section */}
+      {/* Voucher Section */}
       <div className="section">
         <h3 className="section-title">Mã giảm giá</h3>
         <div className="voucher-section">
@@ -420,7 +455,7 @@ const handleTinhKhoangCach = async () => {
         </div>
       </div>
 
-      {/* Total and action buttons */}
+      {/* Total and Order Section */}
       <div className="section">
         <div className="total-section">
           <div className="total-row">
@@ -452,6 +487,13 @@ const handleTinhKhoangCach = async () => {
             onClick={handleDatHang}
             disabled={loading || !diaChi.trim()}
             className="btn-order"
+            title={
+              loading 
+                ? "Đang xử lý..." 
+                : !diaChi.trim()
+                  ? "Vui lòng chọn địa chỉ giao hàng"
+                  : "Xác nhận đặt hàng"
+            }
           >
             {loading ? "Đang xử lý..." : "Xác nhận đặt hàng"}
           </button>

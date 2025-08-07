@@ -31,4 +31,8 @@ public class ChiTietDonHangService {
     public void deleteById(Long id) {
         chiTietDonHangRepository.deleteById(id);
     }
+    
+      public List<ChiTietDonHang> getByDonHangId(Long donHangId) {
+        return chiTietDonHangRepository.findByDonHangId(donHangId);
+    }
 }

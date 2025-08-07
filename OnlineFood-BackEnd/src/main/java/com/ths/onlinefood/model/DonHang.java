@@ -20,7 +20,8 @@ public class DonHang {
 
     private LocalDateTime ngayTao;
 
-    private String trangThai;
+   @Enumerated(EnumType.STRING)
+    private TrangThaiDonHang_ENUM trangThai;
 
     private Double tongTien;
 
@@ -33,4 +34,6 @@ public class DonHang {
     private Voucher voucher;
     
     private String diaChiGiaoHang;
+    
+     private String ghiChu;
 }

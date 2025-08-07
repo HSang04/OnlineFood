@@ -26,5 +26,5 @@ public class ChiTietDonHang {
 
     private int soLuong;
 
-    private double donGia;
+    private Double donGia;
 }

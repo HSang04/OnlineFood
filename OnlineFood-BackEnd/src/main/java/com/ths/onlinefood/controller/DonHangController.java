@@ -2,6 +2,7 @@ package com.ths.onlinefood.controller;
 
 import com.ths.onlinefood.model.DonHang;
 import com.ths.onlinefood.request.DonHangRequest;
+import com.ths.onlinefood.request.UpdateTrangThaiRequest;
 import com.ths.onlinefood.service.DonHangService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,20 @@ public class DonHangController {
         DonHang updated = donHangService.update(id, donHang);
         return updated == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(updated);
     }
+    
+    @PatchMapping("/trang-thai/{id}")
+    public ResponseEntity<DonHang> updateTrangThai(
+            @PathVariable Long id,
+            @RequestBody UpdateTrangThaiRequest request
+    ) {
+        try {
+            DonHang updated = donHangService.updateTrangThai(id, request.getTrangThai());
+            return updated == null ? ResponseEntity.notFound().build() : ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
 
     @DeleteMapping("/{id}")
     @Transactional

@@ -28,6 +28,15 @@ public class ChiTietDonHangController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+    
+     @GetMapping("/don-hang/{donHangId}")
+    public ResponseEntity<List<ChiTietDonHang>> getByDonHangId(@PathVariable Long donHangId) {
+        List<ChiTietDonHang> list = chiTietDonHangService.getByDonHangId(donHangId);
+        if (list.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(list);
+    }
 
     @PostMapping
     public ResponseEntity<ChiTietDonHang> create(@RequestBody ChiTietDonHang chiTietDonHang) {

@@ -31,10 +31,11 @@ public class DonHangService {
 
         DonHang donHang = new DonHang();
         donHang.setNgayTao(LocalDateTime.now());
-        donHang.setTrangThai("Đang xử lý");
+        donHang.setTrangThai(TrangThaiDonHang_ENUM.DANG_XU_LY);
         donHang.setTongTien(request.getTongTien());
         donHang.setNguoiDung(nguoiDung);
         donHang.setDiaChiGiaoHang(request.getDiaChiGiaoHang());
+        donHang.setGhiChu(request.getGhiChu());
        if (request.getVoucherId() != null) {
             Voucher voucher = voucherRepository.findById(request.getVoucherId())
                 .orElseThrow(() -> new IllegalArgumentException("Voucher không tồn tại"));
@@ -80,9 +81,27 @@ public class DonHangService {
             dh.setTongTien(newDH.getTongTien());
             dh.setNguoiDung(newDH.getNguoiDung());
             dh.setVoucher(newDH.getVoucher());
+            dh.setGhiChu(newDH.getGhiChu());
             return donHangRepository.save(dh);
         }).orElse(null);
     }
+    
+    public DonHang updateTrangThai(Long id, String trangThai) {
+        Optional<DonHang> optional = donHangRepository.findById(id);
+        if (optional.isEmpty()) return null;
+
+        DonHang donHang = optional.get();
+
+        try {
+            TrangThaiDonHang_ENUM enumValue = TrangThaiDonHang_ENUM.valueOf(trangThai.toUpperCase());
+            donHang.setTrangThai(enumValue);
+            return donHangRepository.save(donHang);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Trạng thái không hợp lệ: " + trangThai);
+        }
+    }
+
+
 
     public boolean delete(Long id) {
         if (!donHangRepository.existsById(id)) return false;

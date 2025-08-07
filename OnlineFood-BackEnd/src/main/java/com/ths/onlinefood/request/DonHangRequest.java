@@ -16,6 +16,7 @@ public class DonHangRequest {
     private Double giamGia;
     private Long voucherId;
     private List<ChiTietDonHangRequest> chiTietDonHang;
+    private String ghiChu;
 }
 
 

@@ -15,6 +15,7 @@ import MenuMonAn from './pages/Home/MenuMonAn/MenuMonAn'
 import ChiTietMonAn from './pages/Home/ChiTietMonAn/ChiTietMonAn'
 import GioHang from './pages/Profile/GioHang/GioHang';
 import ThanhToan from './pages/Pay/ThanhToan/ThanhToan'
+import QuanLyDonHang from './pages/Admin/QuanLyDonHang/QuanLyDonHang'
 
 const App = () => {
   return (
@@ -39,6 +40,7 @@ const App = () => {
 
           <Route path="/quan-ly-danh-muc" element={ <RequireAdmin>  <QuanLyDanhMuc /> </RequireAdmin> } />
           <Route path="/quan-ly-mon-an" element={ <RequireAdmin>  <QuanLyMonAn /> </RequireAdmin> } />
+           <Route path="/quan-ly-don-hang" element={ <RequireAdmin>  <QuanLyDonHang /> </RequireAdmin> } />
           <Route path="/them-sua-mon-an" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
           <Route path="/them-sua-mon-an/:id" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
           
