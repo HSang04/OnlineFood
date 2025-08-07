@@ -340,6 +340,7 @@ const handleSubmit = async (e) => {
   }
 
   return (
+     <div className="them-sua-mon-an-wrapper">
     <div className="them-sua-mon-an">
       <h2>{id ? 'Sửa' : 'Thêm'} Món Ăn</h2>
       
@@ -636,6 +637,7 @@ const handleSubmit = async (e) => {
           {loading ? 'Đang xử lý...' : (id ? 'Cập nhật' : 'Thêm mới')}
         </button>
       </form>
+    </div>
     </div>
   );
 };

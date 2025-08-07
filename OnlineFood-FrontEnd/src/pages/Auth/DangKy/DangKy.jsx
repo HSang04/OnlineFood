@@ -72,7 +72,7 @@ const DangKy = () => {
       <form className="register-form" onSubmit={handleSubmit}>
         <h2>Đăng ký tài khoản</h2>
 
-        <label htmlFor="username">Tên người dùng</label>
+        <label htmlFor="username">Tài khoản</label>
         <input
           type="text"
           id="username"

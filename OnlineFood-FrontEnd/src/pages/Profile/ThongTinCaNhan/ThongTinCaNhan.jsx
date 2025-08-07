@@ -271,7 +271,7 @@ const ThongTinCaNhan = () => {
           </div>
 
           <div className="form-group">
-            <label><strong>Họ tên:</strong></label>
+            <label><span>Họ tên:</span></label>
             <input
               type="text"
               name="hoTen"
@@ -282,7 +282,7 @@ const ThongTinCaNhan = () => {
           </div>
 
           <div className="form-group">
-            <label><strong>Số điện thoại:</strong></label>
+            <label><span>Số điện thoại:</span></label>
             <input
               type="tel"
               name="soDienThoai"
@@ -293,7 +293,7 @@ const ThongTinCaNhan = () => {
           </div>
 
           <div className="form-group">
-            <label><strong>Địa chỉ:</strong></label>
+            <label><span>Địa chỉ:</span></label>
             <textarea
               name="diaChi"
               value={editForm.diaChi}
