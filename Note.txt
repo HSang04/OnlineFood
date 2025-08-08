@@ -1,3 +1,4 @@
 5/8 : Cần fix lỗi ở trang Chi Tiết Món ăn ( chưa hiển thị đúng giá giảm sau KM)
 ( Đã fix )
-6/8 : Cần fix thêm chỗ tính khoảng cách ở phần Thanh Toán. + Xử lý dưới bao nhiêu km thì mới giao hàng
+6/8 : Cần fix thêm chỗ tính khoảng cách ở phần Thanh Toán. + Xử lý dưới bao nhiêu km thì mới giao hàng ( Đã fix )
+8/8 : Người dùng chưa đăng nhập thì cũng load được Thực đơn ( Da fix )

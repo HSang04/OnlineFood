@@ -15,17 +15,17 @@ const MenuMonAn = () => {
 
   const navigate = useNavigate();
 
-  // Gọi API lấy danh sách món ăn đã có thông tin giá khuyến mãi từ backend
+  
   const fetchMonAn = async () => {
     setLoading(true);
     try {
-      // Gọi endpoint trả về DTO đã tính toán giá và có hình ảnh
-      const res = await axios.get('/mon-an/active'); // Sử dụng endpoint mới
+    
+      const res = await axios.get('/mon-an/active'); 
       setDsMonAn(res.data);
       setDsMonAnGoc(res.data);
     } catch (err) {
       console.error("Lỗi lấy danh sách món ăn:", err);
-      // Fallback về endpoint cũ nếu endpoint mới chưa sẵn sàng
+     
       try {
         const res = await axios.get('/mon-an');
         const activeItems = res.data.filter(mon => mon.trangThai === 1); 
@@ -56,7 +56,7 @@ const MenuMonAn = () => {
   const applyFilters = useCallback(() => {
     let filteredData = [...dsMonAnGoc];
 
-    // Lọc theo từ khóa
+   
     if (keyword.trim()) {
       filteredData = filteredData.filter(mon =>
         mon.tenMonAn.toLowerCase().includes(keyword.toLowerCase()) ||
@@ -64,7 +64,7 @@ const MenuMonAn = () => {
       );
     }
 
-    // Lọc theo danh mục
+  
     if (selectedCategory) {
       filteredData = filteredData.filter(mon => 
         mon.danhMuc?.id === selectedCategory || mon.danhMucId === selectedCategory ||
@@ -72,7 +72,7 @@ const MenuMonAn = () => {
       );
     }
 
-    // Sắp xếp
+   
     if (sortBy) {
       filteredData = filteredData.sort((a, b) => {
         switch (sortBy) {

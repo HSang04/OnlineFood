@@ -152,7 +152,7 @@ const Header = () => {
         <>
           <li className="nav-item"><Link className="nav-link nav-hover" to="/">Trang chủ</Link></li>
           <li className="nav-item"><Link className="nav-link nav-hover" to="/menu">Thực đơn</Link></li>
-          <li className="nav-item"><Link className="nav-link nav-hover" to="/cart">Giỏ hàng</Link></li>
+          {/* <li className="nav-item"><Link className="nav-link nav-hover" to="/cart">Giỏ hàng</Link></li> */}
           <li className="nav-item"><Link className="nav-link nav-hover" to="/login">Đăng nhập</Link></li>
         </>
       );

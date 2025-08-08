@@ -37,6 +37,9 @@ public class NguoiDung {
 
     private LocalDateTime ngayTao;
     
+    @Column(name = "trang_thai")
+    private Boolean trangThai = true;
+    
    @OneToMany(mappedBy = "nguoiDung", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<GioHang> gioHangList;
