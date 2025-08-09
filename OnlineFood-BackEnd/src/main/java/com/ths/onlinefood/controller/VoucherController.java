@@ -3,15 +3,16 @@ package com.ths.onlinefood.controller;
 import com.ths.onlinefood.model.Voucher;
 import com.ths.onlinefood.service.VoucherService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/vouchers")
 public class VoucherController {
-
+    
     @Autowired
     private VoucherService voucherService;
 
@@ -40,8 +41,19 @@ public class VoucherController {
         voucherService.deleteVoucher(id);
     }
 
+ 
     @GetMapping("/find")
-    public Optional<Voucher> getVoucherByCode(@RequestParam String ma) {
-        return voucherService.findByMaVoucher(ma);
+    public ResponseEntity<Map<String, Object>> getVoucherByCode(
+            @RequestParam String ma,
+            @RequestParam(required = false, defaultValue = "0") double tongTien) {
+        
+        Map<String, Object> response = voucherService.findAndValidateVoucher(ma, tongTien);
+        
+        boolean isValid = (boolean) response.get("valid");
+        if (isValid) {
+            return ResponseEntity.ok(response);
+        } else {
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 }

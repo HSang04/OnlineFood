@@ -2,3 +2,8 @@
 ( Đã fix )
 6/8 : Cần fix thêm chỗ tính khoảng cách ở phần Thanh Toán. + Xử lý dưới bao nhiêu km thì mới giao hàng ( Đã fix )
 8/8 : Người dùng chưa đăng nhập thì cũng load được Thực đơn ( Da fix )
+9/8 : Cần thêm trạng thái cho Voucher 
+      Thêm Họ tên người dùng, Email, Địa chỉ vào Hóa đơn 
+      Đưa username, email, họ tên người dùng về null nếu quyết định xóa 
+      Cần thông báo lỗi rõ ràng khi đăng nhập/ đăng ký không hợp lệ 
+	Khi áp dụng Voucher ( hiện tên Voucher và mô tả thay vì emoji như hiện tại )

@@ -35,6 +35,9 @@ public class Voucher {
     
     private int giaToiThieu;
     
+    @Column(name = "trang_thai")
+    private Boolean trangThai;
+    
     public enum LoaiVoucher {
         PHAN_TRAM,
         TIEN_MAT

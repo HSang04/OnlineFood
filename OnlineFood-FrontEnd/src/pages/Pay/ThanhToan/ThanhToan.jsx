@@ -8,14 +8,13 @@ const ThanhToan = () => {
   const navigate = useNavigate();
 
   const [gioHang, setGioHang] = useState([]);
-  const [tongTienGoc, setTongTienGoc] = useState(0);
+  const [tongTienGoc, setTongTienGoc] = useState(0); // Tổng tiền gốc (chưa giảm)
   const [diaChi, setDiaChi] = useState("");
   const [diaChiCu, setDiaChiCu] = useState("");
   const [ghiChu, setGhiChu] = useState("");
   const [voucher, setVoucher] = useState("");
   const [voucherData, setVoucherData] = useState(null);
   const [giamGia, setGiamGia] = useState(0);
-  const [tongTien, setTongTien] = useState(0); 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -38,17 +37,16 @@ const ThanhToan = () => {
     return monAn?.gia || 0;
   }, []);
 
+  // Tính tổng tiền gốc từ giỏ hàng nếu chưa có
   useEffect(() => {
-    if (tongTienGoc > 0) {
-      setTongTien(tongTienGoc);
-    } else if (gioHang.length > 0) {
+    if (tongTienGoc === 0 && gioHang.length > 0) {
       const calculatedTotal = gioHang.reduce((sum, item) => {
         const gia = tinhGiaThucTe(item.monAn);
         return sum + (gia * item.soLuong);
       }, 0);
-      setTongTien(calculatedTotal);
+      setTongTienGoc(calculatedTotal);
     }
-  }, [tongTienGoc, gioHang, tinhGiaThucTe]);
+  }, [gioHang, tinhGiaThucTe, tongTienGoc]);
 
   useEffect(() => {
     const fetchDiaChiCu = async () => {
@@ -124,46 +122,36 @@ const ThanhToan = () => {
     setError("");
 
     try {
-      const res = await axios.get(`/vouchers/find?ma=${voucher}`);
-      const voucherInfo = res.data;
+      // Gọi API với tổng tiền để backend kiểm tra và tính toán
+      const res = await axios.get(`/vouchers/find`, {
+        params: {
+          ma: voucher,
+          tongTien: tongTienGoc
+        }
+      });
 
-      if (!voucherInfo) {
-        setError("Mã voucher không tồn tại!");
-        setLoading(false);
-        return;
+      const data = res.data;
+
+      // Backend đã kiểm tra tất cả, chỉ cần dùng kết quả
+      if (data.valid) {
+        setVoucherData(data.voucher);
+        setGiamGia(data.discountAmount || 0);
+        setError("");
+        alert("Áp dụng voucher thành công!");
+      } else {
+        setError(data.message);
       }
-
-      if (voucherInfo.soLuong <= voucherInfo.daSuDung) {
-        setError("Voucher đã hết lượt sử dụng");
-        setLoading(false);
-        return;
-      }
-
-      const currentTongTien = tongTienGoc || tongTien;
-      if (currentTongTien < voucherInfo.giaToiThieu) {
-        setError(`Voucher chỉ áp dụng cho đơn từ ${voucherInfo.giaToiThieu.toLocaleString()}₫`);
-        setLoading(false);
-        return;
-      }
-
-      let giam = 0;
-      if (voucherInfo.loai === "PHAN_TRAM") {
-        giam = Math.min((voucherInfo.giaTri / 100) * currentTongTien, voucherInfo.giaTriToiDa || currentTongTien);
-      } else if (voucherInfo.loai === "TIEN_MAT") {
-        giam = voucherInfo.giaTri;
-      }
-
-      giam = Math.min(giam, currentTongTien);
-
-      setVoucherData(voucherInfo);
-      setGiamGia(giam);
-      setTongTien(currentTongTien - giam);
-      setError("");
-      alert("Áp dụng voucher thành công!");
 
     } catch (err) {
       console.error("Lỗi khi kiểm tra voucher:", err);
-      setError("Mã voucher không hợp lệ hoặc đã hết hạn!");
+      
+      if (err.response?.status === 400) {
+        // Lỗi validation từ backend
+        const errorData = err.response.data;
+        setError(errorData.message || "Mã voucher không hợp lệ!");
+      } else {
+        setError("Có lỗi xảy ra khi kiểm tra voucher!");
+      }
     } finally {
       setLoading(false);
     }
@@ -173,9 +161,11 @@ const ThanhToan = () => {
     setVoucher("");
     setVoucherData(null);
     setGiamGia(0);
-    setTongTien(tongTienGoc || tongTien + giamGia);
     setError("");
   };
+
+  // Tính tổng tiền cuối cùng
+  const tongTienCuoi = tongTienGoc - giamGia;
 
   const handleDatHang = async () => {
     if (!diaChi.trim()) {
@@ -186,7 +176,6 @@ const ThanhToan = () => {
     setLoading(true);
 
     try {
-     
       console.log("Đang kiểm tra khoảng cách giao hàng...");
       const distanceRes = await axios.get("/khoang-cach/dia-chi", {
         params: { diaChi: diaChi },
@@ -201,7 +190,6 @@ const ThanhToan = () => {
       const khoangCach = distanceRes.data.khoangCach_km;
       console.log(`Khoảng cách: ${khoangCach} km`);
 
-     
       if (khoangCach > 20) {
         alert(
           `Rất tiếc, địa chỉ của quý khách (cách ${khoangCach.toFixed(1)} km) nằm ngoài phạm vi giao hàng của chúng tôi.\n\n` +
@@ -212,14 +200,13 @@ const ThanhToan = () => {
         return;
       }
 
-      
       const confirmOrder = window.confirm(
         `Xác nhận đặt hàng:\n\n` +
         `• Địa chỉ giao hàng: ${diaChi}\n` +
         `• Khoảng cách: ${khoangCach.toFixed(1)} km\n` +
         `• Thời gian giao hàng dự kiến: ${Math.ceil(khoangCach * 2 + 20)} phút\n` +
         `${ghiChu.trim() ? `• Ghi chú: ${ghiChu}\n` : ''}` +
-        `• Tổng tiền: ${tongTien.toLocaleString()}₫\n\n` +
+        `• Tổng tiền: ${tongTienCuoi.toLocaleString()}₫\n\n` +
         `Bạn có muốn tiếp tục đặt hàng không?`
       );
 
@@ -228,18 +215,12 @@ const ThanhToan = () => {
         return;
       }
 
-      // Bước 4: Thực hiện đặt hàng
-      const finalTongTienGoc = tongTienGoc || gioHang.reduce((sum, item) => {
-        const gia = tinhGiaThucTe(item.monAn);
-        return sum + (gia * item.soLuong);
-      }, 0);
-      
       const donHangData = {
         nguoiDungId: parseInt(nguoiDungId),
         diaChiGiaoHang: diaChi,
         ghiChu: ghiChu.trim() || null,
-        tongTien: tongTien,
-        tongTienGoc: finalTongTienGoc,
+        tongTien: tongTienCuoi, // Tổng tiền sau khi giảm
+        tongTienGoc: tongTienGoc, // Tổng tiền gốc
         giamGia: giamGia,
         voucherId: voucherData?.id || null,
         khoangCach: khoangCach,
@@ -268,7 +249,7 @@ const ThanhToan = () => {
         navigate('/', { 
           state: { 
             donHangId: response.data.id,
-            tongTien: tongTien 
+            tongTien: tongTienCuoi 
           } 
         });
       }
@@ -326,7 +307,7 @@ const ThanhToan = () => {
           
           <div className="subtotal">
             <span>Tạm tính:</span>
-            <span>{(tongTienGoc || tongTien + giamGia).toLocaleString()}₫</span>
+            <span>{tongTienGoc.toLocaleString()}₫</span>
           </div>
         </div>
       </div>
@@ -387,7 +368,6 @@ const ThanhToan = () => {
             maxLength={500}
             rows={4}
           />
-         
         </div>
       </div>
 
@@ -441,7 +421,7 @@ const ThanhToan = () => {
           {voucherData && (
             <div className="voucher-applied">
               <div className="voucher-info">
-                <span className="voucher-name">✅ {voucherData.tenVoucher}</span>
+                <span className="voucher-name">✅ {voucherData.maVoucher}</span>
                 <span className="voucher-discount">-{giamGia.toLocaleString()}₫</span>
               </div>
               <button 
@@ -460,7 +440,7 @@ const ThanhToan = () => {
         <div className="total-section">
           <div className="total-row">
             <span>Tạm tính:</span>
-            <span>{(tongTienGoc || tongTien + giamGia).toLocaleString()}₫</span>
+            <span>{tongTienGoc.toLocaleString()}₫</span>
           </div>
           
           {giamGia > 0 && (
@@ -472,7 +452,7 @@ const ThanhToan = () => {
           
           <div className="total-row final-total">
             <span>Tổng cộng:</span>
-            <span>{tongTien.toLocaleString()}₫</span>
+            <span>{tongTienCuoi.toLocaleString()}₫</span>
           </div>
         </div>
 

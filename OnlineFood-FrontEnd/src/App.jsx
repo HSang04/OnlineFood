@@ -17,7 +17,9 @@ import GioHang from './pages/Profile/GioHang/GioHang';
 import ThanhToan from './pages/Pay/ThanhToan/ThanhToan'
 import QuanLyDonHang from './pages/Admin/QuanLyDonHang/QuanLyDonHang'
 import QuanLyNguoiDung from './pages/Admin/QuanLyNguoiDung/QuanLyNguoiDung';
-import ChiTietNguoiDung from './pages/Admin/QuanLyNguoiDung/ChiTietNguoiDung'
+import ChiTietNguoiDung from './pages/Admin/QuanLyNguoiDung/ChiTietNguoiDung';
+import QuanLyVoucher from './pages/Admin/QuanLyVoucher/QuanLyVoucher';
+import ThemSuaVoucher from './pages/Admin/QuanLyVoucher/ThemSuaVoucher';
 
 const App = () => {
   return (
@@ -43,11 +45,18 @@ const App = () => {
           <Route path="/quan-ly-danh-muc" element={ <RequireAdmin>  <QuanLyDanhMuc /> </RequireAdmin> } />
           <Route path="/quan-ly-mon-an" element={ <RequireAdmin>  <QuanLyMonAn /> </RequireAdmin> } />
           <Route path="/quan-ly-don-hang" element={ <RequireAdmin>  <QuanLyDonHang /> </RequireAdmin> } />
-          <Route path="/quan-ly-nguoi-dung" element={ <RequireAdmin>  <QuanLyNguoiDung /> </RequireAdmin> } />
+       
 
           <Route path="/nguoi-dung" element={ <RequireAdmin>  <ChiTietNguoiDung /> </RequireAdmin> } />
           <Route path="/nguoi-dung/:id" element={ <RequireAdmin>  <ChiTietNguoiDung /> </RequireAdmin> } />
           <Route path="/quan-ly-nguoi-dung" element={ <RequireAdmin>  <QuanLyNguoiDung /> </RequireAdmin> } />
+
+          
+          <Route path="/quan-ly-voucher" element={ <RequireAdmin>  <QuanLyVoucher /> </RequireAdmin> } />
+           <Route path="/voucher/them" element={ <RequireAdmin>  <ThemSuaVoucher /> </RequireAdmin> } />
+          <Route path="/voucher/sua/:id" element={ <RequireAdmin>  <ThemSuaVoucher /> </RequireAdmin> } />
+          
+          
         
           <Route path="/them-sua-mon-an" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
           <Route path="/them-sua-mon-an/:id" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
