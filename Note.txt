@@ -1,9 +1,34 @@
+//                       _oo0oo_
+//                      o8888888o
+//                      88" . "88
+//                      (| -_- |)
+//                      0\  =  /0
+//                    ___/`---'\___
+//                  .' \\|     |// '.
+//                 / \\|||  :  |||// \
+//                / _||||| -:- |||||- \
+//               |   | \\\  -  /// |   |
+//               | \_|  ''\---/''  |_/ |
+//               \  .-\__  '-'  ___/-. /
+//             ___'. .'  /--.--\  `. .'___
+//          ."" '<  `.___\_<|>_/___.' >' "".
+//         | | :  `- \`.;`\ _ /`;.`/ - ` : | |
+//         \  \ `_.   \_ __\ /__ _/   .-` /  /
+//     =====`-.____`.___ \_____/___.-`___.-'=====
+//                       `=---='
+//
+//     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//                       NO BUG  
+//     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 5/8 : Cần fix lỗi ở trang Chi Tiết Món ăn ( chưa hiển thị đúng giá giảm sau KM)
 ( Đã fix )
 6/8 : Cần fix thêm chỗ tính khoảng cách ở phần Thanh Toán. + Xử lý dưới bao nhiêu km thì mới giao hàng ( Đã fix )
 8/8 : Người dùng chưa đăng nhập thì cũng load được Thực đơn ( Da fix )
-9/8 : Cần thêm trạng thái cho Voucher 
+9/8 : Cần thêm trạng thái cho Voucher  ( Đã fix )
       Thêm Họ tên người dùng, Email, Địa chỉ vào Hóa đơn 
-      Đưa username, email, họ tên người dùng về null nếu quyết định xóa 
+      Đưa username, email, họ tên người dùng về null nếu quyết định xóa  ( Đã fix) 
       Cần thông báo lỗi rõ ràng khi đăng nhập/ đăng ký không hợp lệ 
 	Khi áp dụng Voucher ( hiện tên Voucher và mô tả thay vì emoji như hiện tại )
+	Khi dat hang co voucher thì cần - so_luong và + da_su_dung
+10/8 : Vô hiệu hóa tài khoản + Xóa tài khoản ( User tự thực hiện )

@@ -8,7 +8,7 @@ const ThanhToan = () => {
   const navigate = useNavigate();
 
   const [gioHang, setGioHang] = useState([]);
-  const [tongTienGoc, setTongTienGoc] = useState(0); // Tổng tiền gốc (chưa giảm)
+  const [tongTienGoc, setTongTienGoc] = useState(0);
   const [diaChi, setDiaChi] = useState("");
   const [diaChiCu, setDiaChiCu] = useState("");
   const [ghiChu, setGhiChu] = useState("");
@@ -52,9 +52,7 @@ const ThanhToan = () => {
     const fetchDiaChiCu = async () => {
       try {
         const res = await axios.get(`/nguoi-dung/${nguoiDungId}`, {
-          headers: {
-            Authorization: `Bearer ${jwt}`,
-          },
+          headers: { Authorization: `Bearer ${jwt}` },
         });
 
         const diaChiCuData = res.data?.diaChi || "";
@@ -122,7 +120,7 @@ const ThanhToan = () => {
     setError("");
 
     try {
-      // Gọi API với tổng tiền để backend kiểm tra và tính toán
+      // Gọi API để kiểm tra voucher
       const res = await axios.get(`/vouchers/find`, {
         params: {
           ma: voucher,
@@ -132,7 +130,6 @@ const ThanhToan = () => {
 
       const data = res.data;
 
-      // Backend đã kiểm tra tất cả, chỉ cần dùng kết quả
       if (data.valid) {
         setVoucherData(data.voucher);
         setGiamGia(data.discountAmount || 0);
@@ -140,18 +137,22 @@ const ThanhToan = () => {
         alert("Áp dụng voucher thành công!");
       } else {
         setError(data.message);
+        setVoucherData(null);
+        setGiamGia(0);
       }
 
     } catch (err) {
       console.error("Lỗi khi kiểm tra voucher:", err);
       
       if (err.response?.status === 400) {
-        // Lỗi validation từ backend
         const errorData = err.response.data;
         setError(errorData.message || "Mã voucher không hợp lệ!");
       } else {
         setError("Có lỗi xảy ra khi kiểm tra voucher!");
       }
+      
+      setVoucherData(null);
+      setGiamGia(0);
     } finally {
       setLoading(false);
     }
@@ -206,6 +207,7 @@ const ThanhToan = () => {
         `• Khoảng cách: ${khoangCach.toFixed(1)} km\n` +
         `• Thời gian giao hàng dự kiến: ${Math.ceil(khoangCach * 2 + 20)} phút\n` +
         `${ghiChu.trim() ? `• Ghi chú: ${ghiChu}\n` : ''}` +
+        `${voucherData ? `• Voucher: ${voucherData.maVoucher} (-${giamGia.toLocaleString()}₫)\n` : ''}` +
         `• Tổng tiền: ${tongTienCuoi.toLocaleString()}₫\n\n` +
         `Bạn có muốn tiếp tục đặt hàng không?`
       );
@@ -257,11 +259,21 @@ const ThanhToan = () => {
     } catch (err) {
       console.error("Lỗi khi đặt hàng:", err);
       
-      if (err.response?.status === 400 && err.response?.data?.message?.includes("khoảng cách")) {
-        alert("Lỗi khi tính khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
+      if (err.response?.status === 400) {
+        const errorMessage = err.response?.data?.message || "Có lỗi xảy ra khi đặt hàng";
+        
+        if (errorMessage.includes("Voucher không hợp lệ")) {
+          // Voucher đã hết hạn hoặc hết số lượng trong lúc đặt hàng
+          alert(errorMessage + "\nVui lòng kiểm tra lại voucher hoặc đặt hàng không dùng voucher.");
+          // Reset voucher
+          handleRemoveVoucher();
+        } else if (errorMessage.includes("khoảng cách")) {
+          alert("Lỗi khi tính khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
+        } else {
+          alert(errorMessage);
+        }
       } else {
-        const errorMessage = err.response?.data?.message || "Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!";
-        alert(errorMessage);
+        alert("Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!");
       }
     } finally {
       setLoading(false);
@@ -371,7 +383,7 @@ const ThanhToan = () => {
         </div>
       </div>
 
-      {/* Delivery Note Section */}
+    
       <div className="section">
         <h3 className="section-title">📦 Thông tin giao hàng</h3>
         <div className="delivery-info">
@@ -394,7 +406,7 @@ const ThanhToan = () => {
 
       {/* Voucher Section */}
       <div className="section">
-        <h3 className="section-title">Mã giảm giá</h3>
+        <h3 className="section-title">🎫 Mã giảm giá</h3>
         <div className="voucher-section">
           <div className="voucher-input-group">
             <input
@@ -415,20 +427,26 @@ const ThanhToan = () => {
           </div>
 
           {error && (
-            <div className="error-message">{error}</div>
+            <div className="error-message">❌ {error}</div>
           )}
 
+         
           {voucherData && (
             <div className="voucher-applied">
               <div className="voucher-info">
-                <span className="voucher-name">✅ {voucherData.maVoucher}</span>
+                <span className="voucher-name"> {voucherData.maVoucher}</span>
                 <span className="voucher-discount">-{giamGia.toLocaleString()}₫</span>
               </div>
+              {voucherData.moTa && (
+                <div className="voucher-description">
+                   {voucherData.moTa}
+                </div>
+              )}
               <button 
                 onClick={handleRemoveVoucher}
                 className="btn-remove-voucher"
               >
-                Xóa
+                 Xóa
               </button>
             </div>
           )}
@@ -461,7 +479,7 @@ const ThanhToan = () => {
             onClick={() => navigate("/gio-hang")}
             className="btn-back"
           >
-            Quay lại giỏ hàng
+            ⬅️ Quay lại giỏ hàng
           </button>
           <button 
             onClick={handleDatHang}
@@ -475,7 +493,7 @@ const ThanhToan = () => {
                   : "Xác nhận đặt hàng"
             }
           >
-            {loading ? "Đang xử lý..." : "Xác nhận đặt hàng"}
+            {loading ? "Đang xử lý..." : "🛒 Xác nhận đặt hàng"}
           </button>
         </div>
       </div>

@@ -26,8 +26,7 @@ const QuanLyNguoiDung = () => {
 
   const STATUS_OPTIONS = {
     active: 'Đang hoạt động',
-    inactive: 'Đã vô hiệu hóa',
-    all: 'Tất cả trạng thái'
+    inactive: 'Đã vô hiệu hóa'
   };
 
  

@@ -21,34 +21,39 @@ public class VoucherService {
     @Autowired
     private VoucherRepository voucherRepository;
 
-  
-
-    public void checkAndUpdateAllExpiredVouchers() {
+    /**
+     * Chỉ kiểm tra và cập nhật voucher hết hạn khi admin getAll
+     */
+    public void checkAndUpdateExpiredVouchersForAdmin() {
         try {
-            List<Voucher> allVouchers = voucherRepository.findAll();
+            List<Voucher> activeVouchers = voucherRepository.findByTrangThai(true);
             LocalDate today = LocalDate.now();
             boolean hasChanges = false;
             
-            for (Voucher voucher : allVouchers) {
+            for (Voucher voucher : activeVouchers) {
                 if (voucher == null || voucher.getHanSuDung() == null) continue;
                 
                 LocalDate expireDate = getExpireDate(voucher.getHanSuDung());
                 if (expireDate == null) continue;
                 
-                if (expireDate.isBefore(today) && voucher.getTrangThai()) {
+                // Kiểm tra hết hạn
+                if (expireDate.isBefore(today)) {
                     voucher.setTrangThai(false);
                     hasChanges = true;
+                    logger.info("Voucher {} đã hết hạn, cập nhật trạng thái", voucher.getMaVoucher());
                 }
                 
-                if (voucher.getDaSuDung() >= voucher.getSoLuong() && voucher.getSoLuong() > 0 && voucher.getTrangThai()) {
+                // Kiểm tra hết số lượng
+                if (voucher.getDaSuDung() >= voucher.getSoLuong()) {
                     voucher.setTrangThai(false);
                     hasChanges = true;
+                    logger.info("Voucher {} đã hết số lượng, cập nhật trạng thái", voucher.getMaVoucher());
                 }
             }
             
             if (hasChanges) {
-                voucherRepository.saveAll(allVouchers);
-                logger.info("Đã cập nhật trạng thái voucher hết hạn");
+                voucherRepository.saveAll(activeVouchers);
+                logger.info("Đã cập nhật trạng thái các voucher hết hạn/hết số lượng");
             }
             
         } catch (Exception e) {
@@ -76,12 +81,12 @@ public class VoucherService {
     }
 
     public List<Voucher> getAllVouchers() {
-        checkAndUpdateAllExpiredVouchers();
+        // Chỉ kiểm tra khi admin gọi
+        checkAndUpdateExpiredVouchersForAdmin();
         return voucherRepository.findAll();
     }
 
     public Voucher getVoucherById(Long id) {
-        checkAndUpdateAllExpiredVouchers();
         return voucherRepository.findById(id).orElse(null);
     }
 
@@ -111,21 +116,20 @@ public class VoucherService {
     }
 
     public Optional<Voucher> findByMaVoucher(String maVoucher) {
-        checkAndUpdateAllExpiredVouchers();
         return voucherRepository.findByMaVoucher(maVoucher);
     }
     
     public List<Voucher> getVoucherTrue() {
-        checkAndUpdateAllExpiredVouchers();
         return voucherRepository.findByTrangThai(true);
     }
     
-    
-    public Map<String, Object> findAndValidateVoucher(String maVoucher, double tongTien) {
+    /**
+     * Kiểm tra voucher khi người dùng tạo đơn hàng
+     * Chỉ kiểm tra voucher cụ thể, không cập nhật toàn bộ
+     */
+    public Map<String, Object> validateVoucherForOrder(String maVoucher, double tongTien) {
         Map<String, Object> result = new HashMap<>();
         
-        checkAndUpdateAllExpiredVouchers();
-
         // 1. Tìm voucher
         Optional<Voucher> optionalVoucher = voucherRepository.findByMaVoucher(maVoucher);
         if (optionalVoucher.isEmpty()) {
@@ -143,21 +147,12 @@ public class VoucherService {
         if (voucher.getTrangThai() == null || !voucher.getTrangThai()) {
             logger.warn("Voucher {} không khả dụng", maVoucher);
             result.put("valid", false);
-            result.put("message", "Voucher không khả dụng hoặc đã hết hạn");
+            result.put("message", "Voucher không khả dụng");
             result.put("errorCode", "VOUCHER_INACTIVE");
             return result;
         }
 
-        // 3. Kiểm tra số lượng còn lại
-        if (voucher.getSoLuong() > 0 && voucher.getDaSuDung() >= voucher.getSoLuong()) {
-            logger.warn("Voucher {} đã hết lượt sử dụng", maVoucher);
-            result.put("valid", false);
-            result.put("message", "Voucher đã hết lượt sử dụng");
-            result.put("errorCode", "VOUCHER_OUT_OF_STOCK");
-            return result;
-        }
-
-        // 4. Kiểm tra hạn sử dụng
+        // 3. Kiểm tra hạn sử dụng
         LocalDate expireDate = getExpireDate(voucher.getHanSuDung());
         if (expireDate != null && expireDate.isBefore(LocalDate.now())) {
             logger.warn("Voucher {} đã hết hạn", maVoucher);
@@ -167,34 +162,42 @@ public class VoucherService {
             return result;
         }
 
-        // 5. Nếu có tổng tiền, kiểm tra điều kiện và tính giảm giá
-        if (tongTien > 0) {
-            // Kiểm tra số tiền tối thiểu
-            if (tongTien < voucher.getGiaToiThieu()) {
-                logger.warn("Đơn hàng không đạt giá tối thiểu để áp dụng voucher {}", maVoucher);
-                result.put("valid", false);
-                result.put("message", String.format("Đơn hàng phải từ %,.0f₫ trở lên để sử dụng voucher này", voucher.getGiaToiThieu()));
-                result.put("errorCode", "MINIMUM_AMOUNT_NOT_REACHED");
-                return result;
-            }
-
-            // Tính số tiền giảm
-            double discount = calculateDiscount(voucher, tongTien);
-            double finalAmount = tongTien - discount;
-
-            result.put("discountAmount", discount);
-            result.put("finalAmount", finalAmount);
-            result.put("originalAmount", tongTien);
+        // 4. Kiểm tra số lượng còn lại
+        if (voucher.getDaSuDung() >= voucher.getSoLuong()) {
+            logger.warn("Voucher {} đã hết lượt sử dụng", maVoucher);
+            result.put("valid", false);
+            result.put("message", "Voucher đã hết lượt sử dụng");
+            result.put("errorCode", "VOUCHER_OUT_OF_STOCK");
+            return result;
         }
 
-        // Voucher hợp lệ
+        // 5. Kiểm tra điều kiện tối thiểu
+        if (tongTien < voucher.getGiaToiThieu()) {
+            logger.warn("Đơn hàng không đạt giá tối thiểu để áp dụng voucher {}", maVoucher);
+            result.put("valid", false);
+            result.put("message", String.format("Đơn hàng phải từ %,.0f₫ trở lên để sử dụng voucher này", voucher.getGiaToiThieu()));
+            result.put("errorCode", "MINIMUM_AMOUNT_NOT_REACHED");
+            return result;
+        }
+
+        // 6. Tính số tiền giảm
+        double discount = calculateDiscount(voucher, tongTien);
+        double finalAmount = tongTien - discount;
+
+        result.put("discountAmount", discount);
+        result.put("finalAmount", finalAmount);
+        result.put("originalAmount", tongTien);
         result.put("valid", true);
         result.put("message", "Voucher hợp lệ và có thể sử dụng");
         
-        logger.info("Voucher {} hợp lệ", maVoucher);
+        logger.info("Voucher {} hợp lệ cho đơn hàng {}", maVoucher, tongTien);
         return result;
     }
 
+   
+    public Map<String, Object> findAndValidateVoucher(String maVoucher, double tongTien) {
+        return validateVoucherForOrder(maVoucher, tongTien);
+    }
    
     private double calculateDiscount(Voucher voucher, double tongTien) {
         double discount = 0.0;
@@ -209,39 +212,26 @@ public class VoucherService {
         return Math.min(discount, tongTien);
     }
 
-    public double useVoucher(double totalAmount, String maVoucher) {
-        checkAndUpdateAllExpiredVouchers();
+  
+    public boolean useVoucher(String maVoucher) {
+        try {
+            Optional<Voucher> optionalVoucher = voucherRepository.findByMaVoucher(maVoucher);
+            if (optionalVoucher.isEmpty()) {
+                logger.warn("Voucher {} không tồn tại khi sử dụng", maVoucher);
+                return false;
+            }
 
-        Optional<Voucher> optionalVoucher = voucherRepository.findByMaVoucher(maVoucher);
-        if (optionalVoucher.isEmpty()) {
-            logger.warn("Voucher {} không tồn tại", maVoucher);
-            return 0.0;
+            Voucher voucher = optionalVoucher.get();
+            voucher.setDaSuDung(voucher.getDaSuDung() + 1);
+            voucherRepository.save(voucher);
+
+            logger.info("Đã sử dụng voucher {}, số lần đã dùng: {}/{}", 
+                maVoucher, voucher.getDaSuDung(), voucher.getSoLuong());
+            return true;
+            
+        } catch (Exception e) {
+            logger.error("Lỗi khi sử dụng voucher {}: {}", maVoucher, e.getMessage());
+            return false;
         }
-
-        Voucher voucher = optionalVoucher.get();
-
-        if (voucher.getTrangThai() == null || !voucher.getTrangThai()) {
-            logger.warn("Voucher {} không khả dụng", maVoucher);
-            return 0.0;
-        }
-
-        if (voucher.getSoLuong() > 0 && voucher.getDaSuDung() >= voucher.getSoLuong()) {
-            logger.warn("Voucher {} đã hết lượt sử dụng", maVoucher);
-            return 0.0;
-        }
-
-        if (totalAmount < voucher.getGiaToiThieu()) {
-            logger.warn("Đơn hàng không đạt giá tối thiểu để áp dụng voucher {}", maVoucher);
-            return 0.0;
-        }
-
-        double discount = calculateDiscount(voucher, totalAmount);
-
-        // Cập nhật lượt sử dụng
-        voucher.setDaSuDung(voucher.getDaSuDung() + 1);
-        voucherRepository.save(voucher);
-
-        logger.info("Voucher {} áp dụng thành công. Giảm: {}", maVoucher, discount);
-        return discount;
     }
 }

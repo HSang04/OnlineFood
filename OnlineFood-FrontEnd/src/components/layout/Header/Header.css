@@ -1,11 +1,10 @@
-
 .custom-navbar {
   background: linear-gradient(135deg, #87CEFA 0%, #4FB3D9 100%);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
-  z-index: 1000;
+  z-index: 10000; /* Tăng z-index cao hơn */
 }
 
 .navbar-brand {
@@ -21,7 +20,6 @@
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transform: scale(1.05);
 }
-
 
 .nav-link {
   color: white !important;
@@ -41,10 +39,10 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-
+/* Dropdown container - tăng z-index */
 .dropdown-container {
-  position: static;
-  z-index: 9999;
+  position: relative; /* Đổi từ static sang relative */
+  z-index: 99999; /* Z-index rất cao */
 }
 
 .dropdown-toggle {
@@ -55,7 +53,6 @@
   gap: 8px;
   position: relative;
 }
-
 
 .dropdown-toggle::after {
   content: '';
@@ -73,7 +70,7 @@
   opacity: 1;
 }
 
-
+/* Dropdown menu - sửa positioning và z-index */
 .dropdown-menu-custom {
   display: none;
   position: fixed; 
@@ -83,22 +80,23 @@
   min-width: 260px;
   border-radius: 16px;
   padding: 12px;
-  z-index: 99999;
+  z-index: 999999; /* Z-index cực kỳ cao */
   border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 
-    0 25px 80px rgba(0, 0, 0, 0.15),
-    0 15px 40px rgba(0, 0, 0, 0.1),
-    0 5px 20px rgba(0, 0, 0, 0.05),
+    0 25px 80px rgba(0, 0, 0, 0.25), /* Tăng shadow để nổi bật hơn */
+    0 15px 40px rgba(0, 0, 0, 0.15),
+    0 5px 20px rgba(0, 0, 0, 0.1),
     0 0 0 1px rgba(255, 255, 255, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   opacity: 0;
   visibility: hidden;
   transform: translateX(-50%) translateY(-15px) scale(0.95);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   isolation: isolate;
+  pointer-events: none; /* Tắt pointer events khi ẩn */
 }
 
-
+/* Arrow của dropdown */
 .dropdown-menu-custom::before {
   content: '';
   position: absolute;
@@ -113,7 +111,7 @@
   border-bottom: none;
   border-right: none;
   transform: translateX(-50%) rotate(45deg);
-  z-index: 99998;
+  z-index: 999998;
 }
 
 .dropdown-menu-custom.show {
@@ -121,8 +119,8 @@
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0) scale(1); 
+  pointer-events: auto; /* Bật lại pointer events khi hiện */
 }
-
 
 .dropdown-item {
   display: flex;
@@ -138,8 +136,8 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: transparent;
   overflow: hidden;
+  z-index: 1; /* Đảm bảo dropdown items có z-index */
 }
-
 
 .dropdown-item::before {
   content: '▸';
@@ -165,7 +163,6 @@
   transform: translateX(0);
 }
 
-
 .dropdown-item::after {
   content: '';
   position: absolute;
@@ -184,13 +181,11 @@
   height: 200px;
 }
 
-
 .dropdown-item:not(:last-child) {
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   margin-bottom: 4px;
   padding-bottom: 16px;
 }
-
 
 .logout-btn {
   cursor: pointer;
@@ -204,7 +199,6 @@
   box-shadow: 0 8px 25px rgba(255, 107, 107, 0.3);
 }
 
-
 .dropdown-toggle:focus {
   outline: 2px solid rgba(255, 255, 255, 0.8);
   outline-offset: 3px;
@@ -215,6 +209,20 @@
   background: linear-gradient(135deg, #87CEFA 0%, #4FB3D9 100%);
   color: white;
   outline: none;
+}
+
+/* Đảm bảo navbar luôn ở trên cùng */
+.navbar {
+  position: sticky !important;
+  top: 0;
+  z-index: 10000 !important;
+}
+
+/* Đảm bảo content không bị che */
+.voucher-management {
+  margin-top: 20px; /* Thêm margin top nếu cần */
+  position: relative;
+  z-index: 1; /* Z-index thấp hơn navbar */
 }
 
 @media (max-width: 991px) {
@@ -235,6 +243,7 @@
     border-radius: 12px;
     margin: 8px 0;
     min-width: auto;
+    pointer-events: auto;
   }
 
   .dropdown-menu-custom::before {
@@ -268,7 +277,6 @@
   }
 }
 
-
 @keyframes slideInDown {
   from {
     opacity: 0;
@@ -281,9 +289,8 @@
 }
 
 .dropdown-menu-custom.show {
-  animation: slideInDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: slideInDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 
 @media (prefers-contrast: high) {
   .dropdown-menu-custom {
@@ -295,7 +302,6 @@
     color: #000;
   }
 }
-
 
 @media (prefers-reduced-motion: reduce) {
   .dropdown-menu-custom,

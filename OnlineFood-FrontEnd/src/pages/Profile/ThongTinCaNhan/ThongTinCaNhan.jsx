@@ -6,24 +6,35 @@ const ThongTinCaNhan = () => {
   const [user, setUser] = useState(null);
   const [isEditingInfo, setIsEditingInfo] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
-
   const [editForm, setEditForm] = useState({
     hoTen: '',
     soDienThoai: '',
     diaChi: ''
   });
   
-
   const [passwordForm, setPasswordForm] = useState({
     matKhauCu: '',
     matKhauMoi: '',
     xacNhanMatKhau: ''
   });
+
+  const [deactivateForm, setDeactivateForm] = useState({
+    matKhau: ''
+  });
+
+  const [deleteForm, setDeleteForm] = useState({
+    matKhau: '',
+    xacNhan: ''
+  });
   
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
+  const [deactivateMessage, setDeactivateMessage] = useState('');
+  const [deleteMessage, setDeleteMessage] = useState('');
   
   const idNguoiDung = localStorage.getItem("idNguoiDung");
   const jwt = localStorage.getItem("jwt");
@@ -56,7 +67,6 @@ const ThongTinCaNhan = () => {
     fetchUserData();
   }, [idNguoiDung, jwt]);
 
-
   const handleInfoInputChange = (e) => {
     const { name, value } = e.target;
     setEditForm(prev => ({
@@ -64,7 +74,6 @@ const ThongTinCaNhan = () => {
       [name]: value
     }));
   };
-
 
   const handlePasswordInputChange = (e) => {
     const { name, value } = e.target;
@@ -74,6 +83,21 @@ const ThongTinCaNhan = () => {
     }));
   };
 
+  const handleDeactivateInputChange = (e) => {
+    const { name, value } = e.target;
+    setDeactivateForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleDeleteInputChange = (e) => {
+    const { name, value } = e.target;
+    setDeleteForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
  
   const handleSaveInfo = async () => {
     setLoading(true);
@@ -112,13 +136,11 @@ const ThongTinCaNhan = () => {
       setLoading(false);
     }
   };
-
  
   const handleChangePassword = async () => {
     setLoading(true);
     setPasswordMessage('');
     
-
     if (!passwordForm.matKhauCu.trim()) {
       setPasswordMessage('Vui lòng nhập mật khẩu cũ!');
       setLoading(false);
@@ -179,6 +201,103 @@ const ThongTinCaNhan = () => {
     }
   };
 
+  const handleDeactivateAccount = async () => {
+    setLoading(true);
+    setDeactivateMessage('');
+    
+    if (!deactivateForm.matKhau.trim()) {
+      setDeactivateMessage('Vui lòng nhập mật khẩu để xác nhận!');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      await axios.patch(
+        `/nguoi-dung/secure/${idNguoiDung}/deactivate`, 
+        {
+          matKhau: deactivateForm.matKhau
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        }
+      );
+
+      setDeactivateMessage('Tài khoản đã được vô hiệu hóa thành công!');
+      
+      // Đăng xuất sau 2 giây
+      setTimeout(() => {
+        localStorage.removeItem('jwt');
+        localStorage.removeItem('idNguoiDung');
+        window.location.href = '/login';
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Lỗi khi vô hiệu hóa tài khoản:", error);
+      if (error.response?.status === 400) {
+        setDeactivateMessage('Mật khẩu không chính xác!');
+      } else if (error.response?.status === 401) {
+        setDeactivateMessage('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else {
+        setDeactivateMessage(error.response?.data?.message || 'Có lỗi xảy ra khi vô hiệu hóa tài khoản!');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setLoading(true);
+    setDeleteMessage('');
+    
+    if (!deleteForm.matKhau.trim()) {
+      setDeleteMessage('Vui lòng nhập mật khẩu để xác nhận!');
+      setLoading(false);
+      return;
+    }
+    
+    if (deleteForm.xacNhan !== 'XÓA TÀI KHOẢN') {
+      setDeleteMessage('Vui lòng nhập chính xác "XÓA TÀI KHOẢN" để xác nhận!');
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      await axios.delete(
+        `/nguoi-dung/secure/${idNguoiDung}`, 
+        {
+          data: {
+            matKhau: deleteForm.matKhau
+          },
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        }
+      );
+
+      setDeleteMessage('Tài khoản đã được xóa thành công!');
+      
+      // Đăng xuất sau 2 giây
+      setTimeout(() => {
+        localStorage.removeItem('jwt');
+        localStorage.removeItem('idNguoiDung');
+        window.location.href = '/login';
+      }, 2000);
+      
+    } catch (error) {
+      console.error("Lỗi khi xóa tài khoản:", error);
+      if (error.response?.status === 400) {
+        setDeleteMessage('Mật khẩu không chính xác!');
+      } else if (error.response?.status === 401) {
+        setDeleteMessage('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else {
+        setDeleteMessage(error.response?.data?.message || 'Có lỗi xảy ra khi xóa tài khoản!');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
  
   const handleCancelInfo = () => {
     setEditForm({
@@ -190,7 +309,6 @@ const ThongTinCaNhan = () => {
     setMessage('');
   };
 
-
   const handleCancelPassword = () => {
     setPasswordForm({
       matKhauCu: '',
@@ -201,21 +319,36 @@ const ThongTinCaNhan = () => {
     setPasswordMessage('');
   };
 
+  const handleCancelDeactivate = () => {
+    setDeactivateForm({
+      matKhau: ''
+    });
+    setIsDeactivating(false);
+    setDeactivateMessage('');
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteForm({
+      matKhau: '',
+      xacNhan: ''
+    });
+    setIsDeleting(false);
+    setDeleteMessage('');
+  };
+
   if (!user) return <p>Đang tải...</p>;
 
   return (
     <div className="profile-container">
       <h2>Thông tin cá nhân</h2>
       
-  
       {message && (
         <div className={`message ${message.includes('thành công') ? 'success' : 'error'}`}>
           {message}
         </div>
       )}
 
-  
-      {!isEditingInfo && !isChangingPassword && (
+      {!isEditingInfo && !isChangingPassword && !isDeactivating && !isDeleting && (
         <div className="profile-view">
           <p><strong>Username:</strong> {user.username}</p>
           <p><strong>Họ tên:</strong> {user.hoTen}</p>
@@ -239,11 +372,24 @@ const ThongTinCaNhan = () => {
             >
               Đổi mật khẩu
             </button>
+
+            <button 
+              className="deactivate-btn"
+              onClick={() => setIsDeactivating(true)}
+            >
+              Vô hiệu hóa tài khoản
+            </button>
+
+            <button 
+              className="delete-btn"
+              onClick={() => setIsDeleting(true)}
+            >
+              Xóa tài khoản
+            </button>
           </div>
         </div>
       )}
 
-  
       {isEditingInfo && (
         <div className="profile-edit">
           <h3>Chỉnh sửa thông tin cá nhân</h3>
@@ -323,7 +469,6 @@ const ThongTinCaNhan = () => {
         </div>
       )}
 
-   
       {isChangingPassword && (
         <div className="profile-edit password-change">
           <h3>Đổi mật khẩu</h3>
@@ -379,6 +524,107 @@ const ThongTinCaNhan = () => {
             <button 
               className="cancel-btn" 
               onClick={handleCancelPassword}
+              disabled={loading}
+            >
+              Hủy
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isDeactivating && (
+        <div className="profile-edit deactivate-form">
+          <h3>Vô hiệu hóa tài khoản</h3>
+          
+          {deactivateMessage && (
+            <div className={`message ${deactivateMessage.includes('thành công') ? 'success' : 'error'}`}>
+              {deactivateMessage}
+            </div>
+          )}
+
+          <div className="warning-message">
+            <p><strong>Cảnh báo:</strong> Sau khi vô hiệu hóa, bạn sẽ không thể đăng nhập vào hệ thống. Bạn có thể liên hệ quản trị viên để kích hoạt lại tài khoản.</p>
+          </div>
+
+          <div className="form-group">
+            <label><strong>Nhập mật khẩu để xác nhận:</strong></label>
+            <input
+              type="password"
+              name="matKhau"
+              value={deactivateForm.matKhau}
+              onChange={handleDeactivateInputChange}
+              placeholder="Nhập mật khẩu hiện tại"
+            />
+          </div>
+
+          <div className="form-actions">
+            <button 
+              className="deactivate-confirm-btn" 
+              onClick={handleDeactivateAccount}
+              disabled={loading}
+            >
+              {loading ? 'Đang xử lý...' : 'Vô hiệu hóa tài khoản'}
+            </button>
+            
+            <button 
+              className="cancel-btn" 
+              onClick={handleCancelDeactivate}
+              disabled={loading}
+            >
+              Hủy
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isDeleting && (
+        <div className="profile-edit delete-form">
+          <h3>Xóa tài khoản</h3>
+          
+          {deleteMessage && (
+            <div className={`message ${deleteMessage.includes('thành công') ? 'success' : 'error'}`}>
+              {deleteMessage}
+            </div>
+          )}
+
+          <div className="danger-message">
+            <p><strong>NGUY HIỂM:</strong> Hành động này không thể hoàn tác! Tất cả dữ liệu của bạn sẽ bị xóa vĩnh viễn.</p>
+          </div>
+
+          <div className="form-group">
+            <label><strong>Nhập mật khẩu để xác nhận:</strong></label>
+            <input
+              type="password"
+              name="matKhau"
+              value={deleteForm.matKhau}
+              onChange={handleDeleteInputChange}
+              placeholder="Nhập mật khẩu hiện tại"
+            />
+          </div>
+
+          <div className="form-group">
+            <label><strong>Nhập "XÓA TÀI KHOẢN" để xác nhận:</strong></label>
+            <input
+              type="text"
+              name="xacNhan"
+              value={deleteForm.xacNhan}
+              onChange={handleDeleteInputChange}
+              placeholder="Nhập chính xác: XÓA TÀI KHOẢN"
+            />
+          </div>
+
+          <div className="form-actions">
+            <button 
+              className="delete-confirm-btn" 
+              onClick={handleDeleteAccount}
+              disabled={loading}
+            >
+              {loading ? 'Đang xử lý...' : 'Xóa tài khoản'}
+            </button>
+            
+            <button 
+              className="cancel-btn" 
+              onClick={handleCancelDelete}
               disabled={loading}
             >
               Hủy

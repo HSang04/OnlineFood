@@ -1,6 +1,7 @@
 package com.ths.onlinefood.controller;
 
 import com.ths.onlinefood.request.ApiResponseRequest;
+import com.ths.onlinefood.request.PasswordVerificationRequest;
 import com.ths.onlinefood.dto.NguoiDungDTO;
 import com.ths.onlinefood.model.NguoiDung;
 import com.ths.onlinefood.request.ChangePasswordRequest;
@@ -86,6 +87,42 @@ public class NguoiDungController {
                     .body(new ApiResponseRequest(false, e.getMessage()));
         }
     }
+
+    // Vô hiệu hóa tài khoản với xác thực mật khẩu (user tự thực hiện)
+    @PatchMapping("/secure/{id}/deactivate")
+    public ResponseEntity<ApiResponseRequest> deactivateAccountWithPassword(
+            @PathVariable Long id,
+            @RequestBody PasswordVerificationRequest request,
+            Principal principal) {
+        
+        try {
+            String currentUsername = principal.getName();
+            nguoiDungService.deactivateAccountWithPassword(id, request, currentUsername);
+            
+            return ResponseEntity.ok(new ApiResponseRequest(true, "Vô hiệu hóa tài khoản thành công"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponseRequest(false, e.getMessage()));
+        }
+    }
+
+    // Xóa tài khoản với xác thực mật khẩu (user tự thực hiện)
+    @DeleteMapping("/secure/{id}")
+    public ResponseEntity<ApiResponseRequest> deleteAccountWithPassword(
+            @PathVariable Long id,
+            @RequestBody PasswordVerificationRequest request,
+            Principal principal) {
+        
+        try {
+            String currentUsername = principal.getName();
+            nguoiDungService.deleteAccountWithPassword(id, request, currentUsername);
+            
+            return ResponseEntity.ok(new ApiResponseRequest(true, "Xóa tài khoản thành công"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponseRequest(false, e.getMessage()));
+        }
+    }
     
     @GetMapping("/secure/profile")
     public ResponseEntity<NguoiDung> getCurrentUserProfile(Principal principal) {
@@ -96,6 +133,7 @@ public class NguoiDungController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
+    // Admin endpoints (không cần xác thực mật khẩu)
     @PatchMapping("/{id}/vo-hieu-hoa")
     public ResponseEntity<?> voHieuHoaNguoiDung(@PathVariable Long id) {
         try {
@@ -111,6 +149,17 @@ public class NguoiDungController {
         try {
             nguoiDungService.kichHoatNguoiDung(id);
             return ResponseEntity.ok("Đã kích hoạt người dùng");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+    
+    // Admin xóa người dùng (soft delete)
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> xoaNguoiDung(@PathVariable Long id) {
+        try {
+            nguoiDungService.xoaNguoiDung(id);
+            return ResponseEntity.ok("Đã xóa người dùng thành công");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

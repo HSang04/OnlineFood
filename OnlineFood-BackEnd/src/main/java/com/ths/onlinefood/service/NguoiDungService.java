@@ -1,6 +1,7 @@
 package com.ths.onlinefood.service;
 
 import com.ths.onlinefood.request.ChangePasswordRequest;
+import com.ths.onlinefood.request.PasswordVerificationRequest;
 import com.ths.onlinefood.dto.NguoiDungDTO;
 import com.ths.onlinefood.model.NguoiDung;
 import com.ths.onlinefood.model.USER_ROLE;
@@ -37,24 +38,19 @@ public class NguoiDungService {
         return nguoiDungRepository.findByUsername(username);
     }
     
- 
     public NguoiDung createUserByPublic(NguoiDungDTO userRequest) throws Exception {
-  
         Optional<NguoiDung> existingUsername = nguoiDungRepository.findByUsername(userRequest.getUsername());
         if (existingUsername.isPresent()) {
             throw new Exception("Username đã được sử dụng.");
         }
         
-      
         Optional<NguoiDung> existingEmail = nguoiDungRepository.findByEmail(userRequest.getEmail());
         if (existingEmail.isPresent()) {
             throw new Exception("Email đã được sử dụng.");
         }
 
-      
         validateUserInput(userRequest);
 
-      
         NguoiDung newUser = new NguoiDung();
         newUser.setUsername(userRequest.getUsername());
         newUser.setEmail(userRequest.getEmail());
@@ -69,29 +65,23 @@ public class NguoiDungService {
         return nguoiDungRepository.save(newUser);
     }
 
-   
     public NguoiDung createUserByAdmin(NguoiDungDTO userRequest) throws Exception {
-        
         Optional<NguoiDung> existingUsername = nguoiDungRepository.findByUsername(userRequest.getUsername());
         if (existingUsername.isPresent()) {
             throw new Exception("Username đã được sử dụng.");
         }
         
-      
         Optional<NguoiDung> existingEmail = nguoiDungRepository.findByEmail(userRequest.getEmail());
         if (existingEmail.isPresent()) {
             throw new Exception("Email đã được sử dụng.");
         }
 
-       
         validateUserInput(userRequest);
 
-        
         if (userRequest.getVaiTro() == null) {
             throw new Exception("Vai trò không được để trống.");
         }
 
-       
         NguoiDung newUser = new NguoiDung();
         newUser.setUsername(userRequest.getUsername());
         newUser.setEmail(userRequest.getEmail());
@@ -106,7 +96,6 @@ public class NguoiDungService {
         return nguoiDungRepository.save(newUser);
     }
 
-    
     private void validateUserInput(NguoiDungDTO userRequest) throws Exception {
         if (!StringUtils.hasText(userRequest.getUsername())) {
             throw new Exception("Username không được để trống.");
@@ -124,7 +113,6 @@ public class NguoiDungService {
             throw new Exception("Họ tên không được để trống.");
         }
         
-      
         if (!isValidEmail(userRequest.getEmail())) {
             throw new Exception("Định dạng email không hợp lệ.");
         }
@@ -134,7 +122,6 @@ public class NguoiDungService {
         return email.matches("^[A-Za-z0-9+_.-]+@(.+)$");
     }
 
-   
     public boolean checkPassword(String rawPassword, String encodedPassword) {
         return passwordEncoder.matches(rawPassword, encodedPassword);
     }
@@ -160,11 +147,9 @@ public class NguoiDungService {
     public NguoiDungDTO updateProfile(Long id, NguoiDungDTO updateRequest, String currentUsername) {
         return nguoiDungRepository.findById(id)
                 .map(existingUser -> {
-                  
                     if (!existingUser.getUsername().equals(currentUsername)) {
                         throw new RuntimeException("Không có quyền cập nhật thông tin này");
                     }
-                 
                   
                     if (StringUtils.hasText(updateRequest.getHoTen())) {
                         existingUser.setHoTen(updateRequest.getHoTen());
@@ -219,6 +204,56 @@ public class NguoiDungService {
         user.setMatKhau(passwordEncoder.encode(request.getMatKhauMoi()));
         nguoiDungRepository.save(user);
     }
+
+    // Vô hiệu hóa tài khoản với xác thực mật khẩu (cho user tự thực hiện)
+    public void deactivateAccountWithPassword(Long id, PasswordVerificationRequest request, String currentUsername) {
+        NguoiDung user = nguoiDungRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        
+        if (!user.getUsername().equals(currentUsername)) {
+            throw new RuntimeException("Không có quyền vô hiệu hóa tài khoản này");
+        }
+        
+        if (!StringUtils.hasText(request.getMatKhau())) {
+            throw new RuntimeException("Vui lòng nhập mật khẩu để xác nhận");
+        }
+        
+        if (!passwordEncoder.matches(request.getMatKhau(), user.getMatKhau())) {
+            throw new RuntimeException("Mật khẩu không chính xác");
+        }
+        
+        user.setTrangThai(false);
+        nguoiDungRepository.save(user);
+    }
+
+    // Xóa tài khoản với xác thực mật khẩu (cho user tự thực hiện)  
+    public void deleteAccountWithPassword(Long id, PasswordVerificationRequest request, String currentUsername) {
+        NguoiDung user = nguoiDungRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        
+        if (!user.getUsername().equals(currentUsername)) {
+            throw new RuntimeException("Không có quyền xóa tài khoản này");
+        }
+        
+        if (!StringUtils.hasText(request.getMatKhau())) {
+            throw new RuntimeException("Vui lòng nhập mật khẩu để xác nhận");
+        }
+        
+        if (!passwordEncoder.matches(request.getMatKhau(), user.getMatKhau())) {
+            throw new RuntimeException("Mật khẩu không chính xác");
+        }
+        
+        // Soft delete - thay đổi thông tin thành "đã xóa"
+        user.setUsername("Đã xóa _ " + id);
+        user.setHoTen("Đã xóa");
+        user.setEmail("Đã xóa _ " + id + "@deleted.com");
+        user.setSoDienThoai("Đã xóa _ " + id);
+        user.setDiaChi("Đã xóa");
+        user.setMatKhau("deleted");
+        user.setTrangThai(false);
+        
+        nguoiDungRepository.save(user);
+    }
     
     public void delete(Long id) {
         nguoiDungRepository.deleteById(id);
@@ -234,7 +269,6 @@ public class NguoiDungService {
         existingUser.setDiaChi(nguoiDungRequest.getDiaChi());
         existingUser.setVaiTro(nguoiDungRequest.getVaiTro());
 
-    
         if (nguoiDungRequest.getMatKhau() != null && !nguoiDungRequest.getMatKhau().trim().isEmpty()) {
             existingUser.setMatKhau(passwordEncoder.encode(nguoiDungRequest.getMatKhau()));
         }
@@ -255,6 +289,21 @@ public class NguoiDungService {
             .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
 
         user.setTrangThai(true); 
+        nguoiDungRepository.save(user);
+    }
+    
+    public void xoaNguoiDung(Long id) {
+        NguoiDung user = nguoiDungRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng"));
+        
+        user.setUsername("Đã xóa _ " + id);
+        user.setHoTen("Đã xóa");
+        user.setEmail("Đã xóa _ " + id + "@ deleted.com");
+        user.setSoDienThoai("Đã xóa _ " + id);
+        user.setDiaChi("Đã xóa");
+        user.setMatKhau("deleted"); 
+        user.setTrangThai(false);
+        
         nguoiDungRepository.save(user);
     }
 }

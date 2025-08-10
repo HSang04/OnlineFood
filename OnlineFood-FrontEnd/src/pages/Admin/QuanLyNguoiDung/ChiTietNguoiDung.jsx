@@ -11,7 +11,6 @@ const ChiTietNguoiDung = () => {
   const [error, setError] = useState('');
   const [mode, setMode] = useState('view'); // xem - xoa - sua
  
-  
   const [formData, setFormData] = useState({
     username: '',
     matKhau: '',
@@ -46,7 +45,6 @@ const ChiTietNguoiDung = () => {
     }
   };
 
-
   const fetchUserDetail = useCallback(async (userId) => {
     setLoading(true);
     setError('');
@@ -74,13 +72,10 @@ const ChiTietNguoiDung = () => {
     }
   }, [jwt]);
 
-
   useEffect(() => {
     if (!id) {
-     
       setMode('create');
     } else {
-
       const urlMode = searchParams.get('mode');
       if (urlMode === 'edit') {
         setMode('edit');
@@ -91,7 +86,6 @@ const ChiTietNguoiDung = () => {
     }
   }, [id, searchParams, fetchUserDetail]);
 
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -99,7 +93,6 @@ const ChiTietNguoiDung = () => {
       [name]: value
     }));
   };
-
 
   const validateForm = () => {
     if (!formData.username.trim()) {
@@ -125,8 +118,7 @@ const ChiTietNguoiDung = () => {
     return true;
   };
 
-
- const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -140,12 +132,10 @@ const ChiTietNguoiDung = () => {
       if (mode === 'create') {
         console.log('Creating user with data:', formData);
         
-         await axios.post('http://localhost:8080/auth/signup-by-admin', formData, {
-            headers: { Authorization: `Bearer ${jwt}` }
-            });
-
+        await axios.post('http://localhost:8080/auth/signup-by-admin', formData, {
+          headers: { Authorization: `Bearer ${jwt}` }
+        });
         
-     
         navigate('/quan-ly-nguoi-dung', { 
           state: { message: 'Tạo người dùng thành công' } 
         });
@@ -165,11 +155,9 @@ const ChiTietNguoiDung = () => {
           updateData.matKhau = formData.matKhau;
         }
         
-    
-         await axios.put(`/nguoi-dung/${id}`, updateData, {
+        await axios.put(`/nguoi-dung/${id}`, updateData, {
           headers: { Authorization: `Bearer ${jwt}` }
         });
-     
         
         navigate(`/nguoi-dung/${id}`, { replace: true });
         setMode('view');
@@ -188,8 +176,6 @@ const ChiTietNguoiDung = () => {
       setLoading(false);
     }
   };
-
-  
 
   const handleVoHieuHoa = async () => {
     if (!id) return;
@@ -223,7 +209,6 @@ const ChiTietNguoiDung = () => {
     }
   };
 
-  // Hàm kích hoạt người dùng
   const handleKichHoat = async () => {
     if (!id) return;
 
@@ -256,17 +241,51 @@ const ChiTietNguoiDung = () => {
     }
   };
 
+  const handleXoaNguoiDung = async () => {
+    if (!id) return;
+
+    const isConfirmed = window.confirm(
+      `⚠️ CẢNH BÁO: Bạn có chắc chắn muốn XÓA người dùng "${formData.hoTen}"?\n\n` +
+      `Hành động này sẽ:\n` +
+      `• Xóa vĩnh viễn tất cả thông tin cá nhân\n` +
+      `• Đặt trạng thái về "đã xóa"\n` +
+      `• Không thể hoàn tác!\n\n` +
+      `Nhấn OK để xác nhận xóa người dùng.`
+    );
+    
+    if (!isConfirmed) {
+      return; 
+    }
+    
+    console.log('Deleting user:', id);
+    setLoading(true);
+    setError('');
+    
+    try {
+      await axios.delete(`/nguoi-dung/${id}`, {
+        headers: { Authorization: `Bearer ${jwt}` }
+      });
+      
+      console.log('User deleted successfully');
+      navigate('/quan-ly-nguoi-dung', { 
+        state: { message: 'Xóa người dùng thành công' } 
+      });
+      
+    } catch (err) {
+      handleApiError(err, 'Không thể xóa người dùng');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleEdit = () => {
     navigate(`/nguoi-dung/${id}?mode=edit`);
   };
 
-
   const handleCancelEdit = () => {
     navigate(`/nguoi-dung/${id}`, { replace: true });
   };
 
- 
   const handleBack = () => {
     navigate('/quan-ly-nguoi-dung');
   };
@@ -282,8 +301,6 @@ const ChiTietNguoiDung = () => {
         return 'Chi tiết người dùng';
     }
   };
-
-
 
   const isReadOnly = mode === 'view';
 
@@ -312,7 +329,7 @@ const ChiTietNguoiDung = () => {
               </span>
             </div>
 
-            {/* Nút vô hiệu hóa/kích hoạt - gọi đúng function tương ứng */}
+            {/* Nút vô hiệu hóa/kích hoạt */}
             {originalData.trangThai ? (
               <button 
                 className="btn btn-warning"
@@ -451,7 +468,6 @@ const ChiTietNguoiDung = () => {
                 />
               </div>
 
-            
               {mode === 'view' && id && (
                 <div className="form-group">
                   <label>Trạng thái</label>
@@ -515,14 +531,25 @@ const ChiTietNguoiDung = () => {
                   >
                     {loading ? 'Đang xử lý...' : (mode === 'create' ? 'Tạo người dùng' : 'Cập nhật')}
                   </button>
+
+                  {/* *** CHỈ CÓN 1 NÚT XÓA DUY NHẤT Ở ĐÂY *** */}
+                  {mode === 'edit' && id && (
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-delete-user"
+                      onClick={handleXoaNguoiDung}
+                      disabled={loading}
+                    >
+                      <i className="icon-trash"></i>
+                      {loading ? 'Đang xóa...' : 'Xóa người dùng'}
+                    </button>
+                  )}
                 </>
               )}
             </div>
           </form>
         </div>
       )}
-
-      
     </div>
   );
 };
