@@ -144,4 +144,50 @@ public class DonHangService {
         donHangRepository.deleteById(id);
         return true;
     }
+    
+    
+    public List<DonHang> getDonHangByNguoiDungId(Long nguoiDungId) {
+    NguoiDung nguoiDung = nguoiDungRepository.findById(nguoiDungId)
+            .orElseThrow(() -> new IllegalArgumentException("Người dùng không tồn tại"));
+    
+    return donHangRepository.findByNguoiDungOrderByNgayTaoDesc(nguoiDung);
+}
+
+   
+    @Transactional
+    public DonHang huyDonHang(Long donHangId, Long nguoiDungId) {
+        // Tìm đơn hàng
+        DonHang donHang = donHangRepository.findById(donHangId)
+                .orElseThrow(() -> new IllegalArgumentException("Đơn hàng không tồn tại"));
+
+        // Kiểm tra quyền sở hữu
+        if (!donHang.getNguoiDung().getId().equals(nguoiDungId)) {
+            throw new SecurityException("Bạn không có quyền hủy đơn hàng này");
+        }
+
+        // Chỉ cho phép hủy khi đang xử lý
+        if (!donHang.getTrangThai().equals(TrangThaiDonHang_ENUM.DANG_XU_LY)) {
+            throw new IllegalArgumentException("Chỉ có thể hủy đơn hàng khi đang xử lý");
+        }
+
+        // Cập nhật trạng thái
+        donHang.setTrangThai(TrangThaiDonHang_ENUM.DA_HUY);
+
+//        // Hoàn lại voucher nếu có
+//        if (donHang.getVoucher() != null) {
+//            try {
+//                voucherService.refundVoucher(donHang.getVoucher().getMaVoucher());
+//                logger.info("Đã hoàn lại voucher {} cho đơn hàng đã hủy {}", 
+//                    donHang.getVoucher().getMaVoucher(), donHangId);
+//            } catch (Exception e) {
+//                logger.warn("Không thể hoàn lại voucher cho đơn hàng {}: {}", 
+//                    donHangId, e.getMessage());
+//            }
+//        }
+
+        DonHang savedDonHang = donHangRepository.save(donHang);
+        logger.info("Đơn hàng {} đã được hủy bởi người dùng {}", donHangId, nguoiDungId);
+
+        return savedDonHang;
+    }
 }

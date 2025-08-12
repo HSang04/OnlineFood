@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/don-hang")
@@ -68,5 +69,44 @@ public class DonHangController {
         return donHangService.delete(id)
                 ? ResponseEntity.ok().build()
                 : ResponseEntity.notFound().build();
+    }
+    
+    @GetMapping("/nguoi-dung/{nguoiDungId}")
+    public ResponseEntity<List<DonHang>> getDonHangByNguoiDung(@PathVariable Long nguoiDungId) {
+        try {
+            List<DonHang> donHangs = donHangService.getDonHangByNguoiDungId(nguoiDungId);
+            return ResponseEntity.ok(donHangs);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+  
+    @GetMapping("/nguoi-dung")
+    public ResponseEntity<List<DonHang>> getDonHangByNguoiDungParam(@RequestParam Long nguoiDungId) {
+        try {
+            List<DonHang> donHangs = donHangService.getDonHangByNguoiDungId(nguoiDungId);
+            return ResponseEntity.ok(donHangs);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PatchMapping("/huy/{id}")
+    public ResponseEntity<DonHang> huyDonHang(
+            @PathVariable Long id,
+            @RequestParam Long nguoiDungId
+    ) {
+        try {
+            DonHang updated = donHangService.huyDonHang(id, nguoiDungId);
+            if (updated == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (SecurityException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 }

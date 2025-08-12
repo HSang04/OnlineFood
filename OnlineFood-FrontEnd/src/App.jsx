@@ -21,6 +21,7 @@ import QuanLyNguoiDung from './pages/Admin/QuanLyNguoiDung/QuanLyNguoiDung';
 import ChiTietNguoiDung from './pages/Admin/QuanLyNguoiDung/ChiTietNguoiDung';
 import QuanLyVoucher from './pages/Admin/QuanLyVoucher/QuanLyVoucher';
 import ThemSuaVoucher from './pages/Admin/QuanLyVoucher/ThemSuaVoucher';
+import LichSuGiaoDich from './pages/Profile/LichSuGiaoDich/LichSuGiaoDich';
 
 const App = () => {
   return (
@@ -40,6 +41,7 @@ const App = () => {
           <Route path="/chi-tiet-mon-an/:id" element={<ChiTietMonAn />} />
            <Route path="/cart" element={<GioHang />} />
            <Route path="/pay"element={<ThanhToan />} />
+           <Route path="/lich-su-giao-dich"element={<LichSuGiaoDich />} />
           
            
 
