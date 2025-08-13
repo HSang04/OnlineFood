@@ -1,3 +1,5 @@
+/* CSS cho QuanLyMonAn.css */
+
 .monan-container {
   padding: 40px;
   max-width: 1200px;
@@ -62,22 +64,32 @@
 }
 
 .btn-edit {
-  background-color: #f1c40f;
+  background-color: #f39c12;
   color: white;
-  margin-right: 5px;
+  margin-right: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
 }
 
 .btn-edit:hover {
-  background-color: #d4ac0d;
+  background-color: #e67e22;
+  transform: scale(1.03);
 }
 
 .btn-delete {
   background-color: #e74c3c;
   color: white;
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: all 0.2s ease;
 }
 
 .btn-delete:hover {
   background-color: #c0392b;
+  transform: scale(1.03);
 }
 
 .sort-buttons {
@@ -135,29 +147,56 @@
   font-style: italic;
   color: #aaa;
 }
-.btn-edit {
-  background-color: #f39c12;
-  color: white;
-  margin-right: 6px;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-.btn-edit:hover {
-  background-color: #e67e22;
-  transform: scale(1.03);
+
+/* CSS cho giá khuyến mãi - đơn giản và đẹp */
+.price-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
 }
 
-.btn-delete {
-  background-color: #e74c3c;
-  color: white;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: all 0.2s ease;
+.sale-price {
+  color: #e74c3c;
+  font-weight: bold;
+  font-size: 16px;
 }
-.btn-delete:hover {
-  background-color: #c0392b;
-  transform: scale(1.03);
+
+.original-price {
+  color: #95a5a6;
+  font-size: 13px;
+  text-decoration: line-through;
+}
+
+.discount-badge {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: bold;
+  margin-left: 6px;
+}
+
+.normal-price {
+  color: #2c3e50;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.status {
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status.active {
+  background-color: #d5f4e6;
+  color: #27ae60;
+}
+
+.status.inactive {
+  background-color: #fadbd8;
+  color: #e74c3c;
 }

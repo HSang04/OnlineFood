@@ -23,6 +23,7 @@ public class MonAnService {
     private final MonAnRepository monAnRepository;
     private final HinhAnhMonAnRepository hinhAnhMonAnRepository;
     private final Cloudinary cloudinary;
+    private final MonAnDTOConverter monAnDTOConverter;
 
     public List<MonAn> getAll() {
         return monAnRepository.findAll();
@@ -124,81 +125,50 @@ public class MonAnService {
 
  
     public double getGiaBan(MonAn monAn) {
-        // Kiểm tra xem có khuyến mãi không và khuyến mãi có hợp lệ không
-        if (monAn.getKhuyenMai() != null && 
-            monAn.getKhuyenMai().getGiaGiam() > 0 && 
-            monAn.getKhuyenMai().getGiaGiam() < monAn.getGia()) {
-            return monAn.getKhuyenMai().getGiaGiam();
-        }
-        return monAn.getGia();
+        return monAnDTOConverter.getDisplayPrice(monAn);
     }
     
- 
+
     public boolean isOnSale(MonAn monAn) {
-        return monAn.getKhuyenMai() != null && 
-               monAn.getKhuyenMai().getGiaGiam() > 0 && 
-               monAn.getKhuyenMai().getGiaGiam() < monAn.getGia();
+        return monAnDTOConverter.getSavingAmount(monAn) > 0;
     }
 
+  
     public int getPhanTramGiamGia(MonAn monAn) {
-        if (!isOnSale(monAn)) {
-            return 0;
-        }
-        
-        double giaGoc = monAn.getGia();
-        double giaGiam = monAn.getKhuyenMai().getGiaGiam();
-        return (int) Math.round(((giaGoc - giaGiam) / giaGoc) * 100);
+        MonAnDTO dto = monAnDTOConverter.convertToDTO(monAn);
+        return dto.getPhanTramGiamGia();
     }
     
- 
+  
     public MonAnDTO convertToDto(MonAn monAn) {
-        MonAnDTO dto = new MonAnDTO();
-        dto.setId(monAn.getId());
-        dto.setTenMonAn(monAn.getTenMonAn());
-        dto.setGia(monAn.getGia()); 
-        dto.setMoTa(monAn.getMoTa());
-        dto.setTrangThai(monAn.getTrangThai());
-        dto.setDanhMuc(monAn.getDanhMuc());
-        
-        
-        dto.setHinhAnhMonAns(monAn.getHinhAnhMonAns());
-        
-   
-        dto.setGiaKhuyenMai(getGiaBan(monAn)); 
-        dto.setCoKhuyenMai(isOnSale(monAn));
-        dto.setPhanTramGiamGia(getPhanTramGiamGia(monAn));
-        
-        return dto;
+        return monAnDTOConverter.convertToDTO(monAn);
     }
     
-   
     public List<MonAnDTO> getAllDTOs() {
         return monAnRepository.findAll()
                 .stream()
                 .map(monAn -> {
-                    // Trigger lazy loading cho hình ảnh
+             
                     monAn.getHinhAnhMonAns().size();
-                    return convertToDto(monAn);
+                    return monAnDTOConverter.convertToDTO(monAn);
                 })
                 .toList();
     }
     
-   
     public List<MonAnDTO> getActiveDTOs() {
         return monAnRepository.findAll()
                 .stream()
                 .filter(monAn -> monAn.getTrangThai() == 1)
                 .map(monAn -> {
-                    // Trigger lazy loading cho hình ảnh
+                 
                     monAn.getHinhAnhMonAns().size();
-                    return convertToDto(monAn);
+                    return monAnDTOConverter.convertToDTO(monAn);
                 })
                 .toList();
     }
     
- 
     public Optional<MonAnDTO> getDTOById(Long id) {
         return monAnRepository.findById(id)
-                .map(this::convertToDto);
+                .map(monAnDTOConverter::convertToDTO);
     }
 }

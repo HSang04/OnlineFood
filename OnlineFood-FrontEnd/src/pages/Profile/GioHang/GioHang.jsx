@@ -47,10 +47,10 @@ const GioHang = () => {
       const gioHangRes = await axios.get(`/gio-hang/${nguoiDungId}`);
       const gioHangData = Array.isArray(gioHangRes.data) ? gioHangRes.data : [];
       
-      // Đảm bảo dữ liệu monAn đầy đủ cho mỗi item
+    
       const processedData = gioHangData.map(item => ({
         ...item,
-        id: item.id || `${item.monAnId}-${Date.now()}`, // Đảm bảo có ID duy nhất
+        id: item.id || `${item.monAnId}-${Date.now()}`, 
         monAnId: item.monAnId || item.monAn?.id,
         monAn: {
           ...item.monAn,

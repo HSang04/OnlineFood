@@ -532,13 +532,9 @@ const QuanLyDonHang = () => {
                               <div className="item-details">
                                 <div className="item-name">{item.monAn?.tenMonAn || `Món ăn ID: ${item.monAnId}`}</div>
                                 <div className="item-price">
-                                  {(item.gia || item.donGia)?.toLocaleString() || "0"}₫ x {item.soLuong || 0}
+                                  {(item.donGia)?.toLocaleString() || "0"}₫ x {item.soLuong || 0}
                                 </div>
-                                {item.monAn?.khuyenMai && (
-                                  <div className="item-discount">
-                                    Khuyến mãi: -{item.monAn.khuyenMai.giaGiam?.toLocaleString()}₫
-                                  </div>
-                                )}
+                                
                               </div>
                             </div>
                             <div className="item-total">

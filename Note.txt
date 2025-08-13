@@ -30,5 +30,7 @@
       Đưa username, email, họ tên người dùng về null nếu quyết định xóa  ( Đã fix) 
       Cần thông báo lỗi rõ ràng khi đăng nhập/ đăng ký không hợp lệ 
 	Khi áp dụng Voucher ( hiện tên Voucher và mô tả thay vì emoji như hiện tại )
-	Khi dat hang co voucher thì cần - so_luong và + da_su_dung
-10/8 : Vô hiệu hóa tài khoản + Xóa tài khoản ( User tự thực hiện )
+	Khi dat hang co voucher thì cần - so_luong và + da_su_dung ( Đã fix )
+10/8 : Vô hiệu hóa tài khoản + Xóa tài khoản ( User tự thực hiện ) ( Đã có )
+13/8 : Xử lý quên mật khẩu
+	Admin quyền tối thượng ( sửa được username + email )

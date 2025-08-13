@@ -29,15 +29,15 @@ public class GioHangController {
     }
 
   
-    @GetMapping("/{nguoiDungId}/thong-ke")
-    public ResponseEntity<GioHangService.GioHangThongKeDTO> getThongKeGioHang(@PathVariable Long nguoiDungId) {
-        try {
-            GioHangService.GioHangThongKeDTO thongKe = gioHangService.getThongKeGioHang(nguoiDungId);
-            return ResponseEntity.ok(thongKe);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
+//    @GetMapping("/{nguoiDungId}/thong-ke")
+//    public ResponseEntity<GioHangService.GioHangThongKeDTO> getThongKeGioHang(@PathVariable Long nguoiDungId) {
+//        try {
+//            GioHangService.GioHangThongKeDTO thongKe = gioHangService.getThongKeGioHang(nguoiDungId);
+//            return ResponseEntity.ok(thongKe);
+//        } catch (RuntimeException e) {
+//            return ResponseEntity.badRequest().build();
+//        }
+//    }
 
    
     @GetMapping("/{nguoiDungId}/tong-tien")

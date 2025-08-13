@@ -157,7 +157,7 @@ const LichSuGiaoDich = () => {
     return statusMap[status] || status.toLowerCase().replace(/\s+/g, '_');
   };
 
-
+  
   const filteredOrders = donHangs.filter(order => {
     const normalizedStatus = normalizeStatus(order.trangThai);
     const matchesFilter = filter === "all" || normalizedStatus === filter;
@@ -281,7 +281,7 @@ const LichSuGiaoDich = () => {
     return (
       <div className="lichSuGiaoDich-container">
         <div className="lichSuGiaoDich-errorContainer">
-          <h2>❌ Có lỗi xảy ra</h2>
+          <h2> Có lỗi xảy ra</h2>
           <p>{error}</p>
           <button onClick={fetchDonHangs} className="lichSuGiaoDich-btnRetry">
             Thử lại
@@ -452,7 +452,7 @@ const LichSuGiaoDich = () => {
         )}
       </div>
 
-      {/* Modal chi tiết đơn hàng */}
+  
       {showModal && (
         <div className="lichSuGiaoDich-modalOverlay" onClick={closeModal}>
           <div className="lichSuGiaoDich-modalContent" onClick={(e) => e.stopPropagation()}>
