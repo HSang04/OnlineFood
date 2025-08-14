@@ -1,11 +1,13 @@
 package com.ths.onlinefood.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Data
@@ -36,4 +38,12 @@ public class DonHang {
     private String diaChiGiaoHang;
     
      private String ghiChu;
-}
+     
+     @OneToOne(mappedBy = "donHang", fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"donHang", "hibernateLazyInitializer"})
+    private HoaDon hoaDon;
+
+    @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"donHang", "hibernateLazyInitializer"})
+    private List<ChiTietDonHang> chiTietDonHang;
+    }

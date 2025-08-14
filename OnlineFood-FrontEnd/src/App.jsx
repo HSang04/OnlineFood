@@ -23,6 +23,9 @@ import QuanLyVoucher from './pages/Admin/QuanLyVoucher/QuanLyVoucher';
 import ThemSuaVoucher from './pages/Admin/QuanLyVoucher/ThemSuaVoucher';
 import LichSuGiaoDich from './pages/Profile/LichSuGiaoDich/LichSuGiaoDich';
 
+import VNPayResult from './pages/Pay/KetQua/VNPayResult';
+import HoaDon from './pages/Profile/HoaDon/HoaDon';
+
 const App = () => {
   return (
     <Router>
@@ -42,6 +45,14 @@ const App = () => {
            <Route path="/cart" element={<GioHang />} />
            <Route path="/pay"element={<ThanhToan />} />
            <Route path="/lich-su-giao-dich"element={<LichSuGiaoDich />} />
+
+          <Route path="/vnpay-result" element={<VNPayResult />} />
+          <Route path="/payment-result" element={<VNPayResult />} />
+          
+         
+          <Route path="/hoa-don/:donHangId" element={<HoaDon />} />
+          <Route path="/invoice/:donHangId" element={<HoaDon />} />
+           
           
            
 

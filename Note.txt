@@ -34,3 +34,5 @@
 10/8 : Vô hiệu hóa tài khoản + Xóa tài khoản ( User tự thực hiện ) ( Đã có )
 13/8 : Xử lý quên mật khẩu
 	Admin quyền tối thượng ( sửa được username + email )
+
+14/8 : fix in hóa đơn bị dư chữ OU FOOD

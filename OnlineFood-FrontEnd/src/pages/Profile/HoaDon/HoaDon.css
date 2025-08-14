@@ -1,0 +1,388 @@
+.hoa-don-container {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.hoa-don-content {
+  padding: 20px;
+}
+
+/* Loading & Error */
+.loading, .error {
+  text-align: center;
+  padding: 40px;
+  font-size: 16px;
+}
+
+.error {
+  color: #e74c3c;
+}
+
+/* Invoice Header */
+.invoice-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #2c5aa0;
+}
+
+.invoice-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #2c5aa0;
+  margin: 0 0 10px 0;
+}
+
+.invoice-header p {
+  margin: 5px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Invoice Info */
+.invoice-info {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.invoice-info div {
+  line-height: 1.5;
+}
+
+/* Invoice Details */
+.invoice-details {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.invoice-details h4 {
+  margin: 0 0 15px 0;
+  color: #2c5aa0;
+  font-size: 16px;
+  font-weight: bold;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 5px 0;
+}
+
+.detail-row:last-child {
+  margin-bottom: 0;
+}
+
+.detail-row span:first-child {
+  font-weight: 500;
+  color: #555;
+}
+
+.detail-row span:last-child {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Order Table */
+.order-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.order-table th,
+.order-table td {
+  border: 1px solid #ddd;
+  padding: 10px 8px;
+  text-align: center;
+}
+
+.order-table th {
+  background-color: #f8f9fa;
+  font-weight: bold;
+  color: #2c5aa0;
+  font-size: 14px;
+}
+
+.order-table td {
+  font-size: 14px;
+}
+
+.order-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+/* Total Section */
+.total-section {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border: 2px solid #2c5aa0;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.total-amount {
+  font-size: 18px !important;
+  font-weight: bold !important;
+  border-top: 2px solid #2c5aa0;
+  margin-top: 15px;
+  padding-top: 15px;
+}
+
+.total-amount span {
+  color: #2c5aa0 !important;
+  font-weight: bold !important;
+}
+
+/* Invoice Footer */
+.invoice-footer {
+  text-align: center;
+  margin: 30px 0;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+  font-style: italic;
+  color: #666;
+}
+
+.invoice-footer p {
+  margin: 5px 0;
+}
+
+.invoice-footer p:first-child {
+  color: #2c5aa0;
+  font-weight: bold;
+  font-style: normal;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 20px 0;
+  border-top: 1px solid #eee;
+  margin-top: 20px;
+}
+
+.action-buttons button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.print-button {
+  background-color: #2c5aa0;
+  color: white;
+}
+
+.print-button:hover {
+  background-color: #1e3f73;
+  transform: translateY(-1px);
+}
+
+.primary-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.primary-button:hover {
+  background-color: #1e7e34;
+  transform: translateY(-1px);
+}
+
+.secondary-button {
+  background-color: #6c757d;
+  color: white;
+}
+
+.secondary-button:hover {
+  background-color: #545b62;
+  transform: translateY(-1px);
+}
+
+/* Print Styles */
+@media print {
+  /* Ẩn tất cả những gì có class no-print */
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Reset container cho in */
+  .hoa-don-container {
+    box-shadow: none;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    width: 100%;
+  }
+  
+  .hoa-don-content {
+    padding: 20px;
+  }
+  
+  /* Style cho print */
+  .invoice-header {
+    border-bottom: 2px solid #000;
+    page-break-inside: avoid;
+  }
+  
+  .invoice-title {
+    color: #000 !important;
+  }
+  
+  .invoice-details {
+    page-break-inside: avoid;
+    border-color: #000;
+  }
+  
+  .invoice-details h4 {
+    color: #000 !important;
+  }
+  
+  .order-table th {
+    background-color: #f0f0f0 !important;
+    color: #000 !important;
+    border-color: #000;
+  }
+  
+  .order-table td {
+    border-color: #000;
+  }
+  
+  .total-section {
+    border-color: #000 !important;
+    page-break-inside: avoid;
+  }
+  
+  .total-amount span {
+    color: #000 !important;
+  }
+  
+  .invoice-footer {
+    page-break-inside: avoid;
+  }
+  
+  .invoice-footer p:first-child {
+    color: #000 !important;
+  }
+  
+  /* Tối ưu font size cho in */
+  body {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  
+  /* Đảm bảo không có page break giữa các section quan trọng */
+  .invoice-info,
+  .invoice-details,
+  .total-section {
+    page-break-inside: avoid;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .hoa-don-container {
+    margin: 10px;
+    padding: 0;
+  }
+  
+  .hoa-don-content {
+    padding: 15px;
+  }
+  
+  .invoice-title {
+    font-size: 20px;
+  }
+  
+  .invoice-info {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .detail-row span:last-child {
+    font-weight: bold;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .action-buttons button {
+    width: 100%;
+    padding: 12px;
+  }
+  
+  .order-table {
+    font-size: 12px;
+  }
+  
+  .order-table th,
+  .order-table td {
+    padding: 8px 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hoa-don-content {
+    padding: 10px;
+  }
+  
+  .invoice-title {
+    font-size: 18px;
+  }
+  
+  .invoice-header p {
+    font-size: 12px;
+  }
+  
+  .invoice-info {
+    font-size: 12px;
+  }
+  
+  .invoice-details {
+    padding: 10px;
+  }
+  
+  .order-table {
+    font-size: 11px;
+  }
+  
+  .order-table th,
+  .order-table td {
+    padding: 6px 3px;
+  }
+  
+  .total-section {
+    padding: 15px;
+  }
+  
+  .total-amount {
+    font-size: 16px !important;
+  }
+}

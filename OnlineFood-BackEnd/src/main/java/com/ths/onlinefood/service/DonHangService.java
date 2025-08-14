@@ -28,7 +28,8 @@ public class DonHangService {
     private final MonAnService monAnService;
     private final VoucherRepository voucherRepository;
     private final VoucherService voucherService;
-
+    private HoaDonService hoaDonService;
+    
     @Transactional
     public DonHang createFromRequest(DonHangRequest request) {
         NguoiDung nguoiDung = nguoiDungRepository.findById(request.getNguoiDungId())
@@ -173,21 +174,12 @@ public class DonHangService {
         // Cập nhật trạng thái
         donHang.setTrangThai(TrangThaiDonHang_ENUM.DA_HUY);
 
-//        // Hoàn lại voucher nếu có
-//        if (donHang.getVoucher() != null) {
-//            try {
-//                voucherService.refundVoucher(donHang.getVoucher().getMaVoucher());
-//                logger.info("Đã hoàn lại voucher {} cho đơn hàng đã hủy {}", 
-//                    donHang.getVoucher().getMaVoucher(), donHangId);
-//            } catch (Exception e) {
-//                logger.warn("Không thể hoàn lại voucher cho đơn hàng {}: {}", 
-//                    donHangId, e.getMessage());
-//            }
-//        }
 
         DonHang savedDonHang = donHangRepository.save(donHang);
         logger.info("Đơn hàng {} đã được hủy bởi người dùng {}", donHangId, nguoiDungId);
 
         return savedDonHang;
     }
+    
+   
 }

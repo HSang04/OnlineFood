@@ -17,9 +17,21 @@ const ThanhToan = () => {
   const [giamGia, setGiamGia] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // Thêm state cho phương thức thanh toán
+  const [phuongThucThanhToan, setPhuongThucThanhToan] = useState("COD"); // COD hoặc VNPAY
+  const [bankCode, setBankCode] = useState(""); // Mã ngân hàng cho VNPay
 
   const nguoiDungId = localStorage.getItem("idNguoiDung");
   const jwt = localStorage.getItem("jwt");
+
+  // Danh sách ngân hàng hỗ trợ VNPay
+  const danhSachNganHang = [
+    { code: "", name: "Cổng thanh toán VNPay" },
+    { code: "VNPAYQR", name: "VNPay QR" },
+    { code: "VNBANK", name: "Ngân hàng nội địa" },
+    { code: "INTCARD", name: "Thẻ quốc tế" }
+  ];
 
   useEffect(() => {
     if (state?.gioHang) {
@@ -120,7 +132,6 @@ const ThanhToan = () => {
     setError("");
 
     try {
-      // Gọi API để kiểm tra voucher
       const res = await axios.get(`/vouchers/find`, {
         params: {
           ma: voucher,
@@ -168,117 +179,170 @@ const ThanhToan = () => {
   // Tính tổng tiền cuối cùng
   const tongTienCuoi = tongTienGoc - giamGia;
 
-  const handleDatHang = async () => {
-    if (!diaChi.trim()) {
-      alert("Vui lòng chọn hoặc nhập địa chỉ giao hàng");
+  const handleVNPayPayment = async (donHangId) => {
+  try {
+    console.log("Đang tạo thanh toán VNPay...");
+    const response = await axios.get('/create-payment', {
+      params: {
+        bookingId: donHangId.toString(),
+        amount: tongTienCuoi,
+        bankCode: bankCode
+      }
+    });
+
+    console.log("Phản hồi từ API create-payment:", response.data);
+
+    if (response.data.code === "00") {
+      // Chuyển hướng đến VNPay
+      window.location.href = response.data.paymentUrl;
+    } else {
+      console.error("Lỗi VNPay - Mã code khác 00:", response.data);
+      throw new Error(response.data.message || "Lỗi tạo thanh toán VNPay");
+    }
+  } catch (err) {
+    console.error("Lỗi khi tạo thanh toán VNPay:", err);
+    if (err.response) {
+      console.error("Status:", err.response.status);
+      console.error("Headers:", err.response.headers);
+      console.error("Data:", err.response.data);
+    } else {
+      console.error("Message:", err.message);
+    }
+    throw new Error("Không thể tạo thanh toán VNPay. Vui lòng thử lại!");
+  }
+};
+
+ const handleDatHang = async () => {
+  if (!diaChi.trim()) {
+    alert("Vui lòng chọn hoặc nhập địa chỉ giao hàng");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    console.log("Đang kiểm tra khoảng cách giao hàng...");
+    const distanceRes = await axios.get("/khoang-cach/dia-chi", {
+      params: { diaChi: diaChi },
+    });
+
+    if (!distanceRes.data || distanceRes.data.khoangCach_km === undefined) {
+      alert("Không thể xác định khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
+    const khoangCach = distanceRes.data.khoangCach_km;
+    console.log(`Khoảng cách: ${khoangCach} km`);
 
-    try {
-      console.log("Đang kiểm tra khoảng cách giao hàng...");
-      const distanceRes = await axios.get("/khoang-cach/dia-chi", {
-        params: { diaChi: diaChi },
-      });
-
-      if (!distanceRes.data || distanceRes.data.khoangCach_km === undefined) {
-        alert("Không thể xác định khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
-        setLoading(false);
-        return;
-      }
-
-      const khoangCach = distanceRes.data.khoangCach_km;
-      console.log(`Khoảng cách: ${khoangCach} km`);
-
-      if (khoangCach > 20) {
-        alert(
-          `Rất tiếc, địa chỉ của quý khách (cách ${khoangCach.toFixed(1)} km) nằm ngoài phạm vi giao hàng của chúng tôi.\n\n` +
-          "Để đảm bảo chất lượng và độ tươi ngon tốt nhất của thực phẩm, chúng tôi chỉ phục vụ trong bán kính 20km.\n\n" +
-          "Xin quý khách vui lòng thông cảm và cân nhắc đặt hàng tại địa chỉ gần hơn!"
-        );
-        setLoading(false);
-        return;
-      }
-
-      const confirmOrder = window.confirm(
-        `Xác nhận đặt hàng:\n\n` +
-        `• Địa chỉ giao hàng: ${diaChi}\n` +
-        `• Khoảng cách: ${khoangCach.toFixed(1)} km\n` +
-        `• Thời gian giao hàng dự kiến: ${Math.ceil(khoangCach * 2 + 20)} phút\n` +
-        `${ghiChu.trim() ? `• Ghi chú: ${ghiChu}\n` : ''}` +
-        `${voucherData ? `• Voucher: ${voucherData.maVoucher} (-${giamGia.toLocaleString()}₫)\n` : ''}` +
-        `• Tổng tiền: ${tongTienCuoi.toLocaleString()}₫\n\n` +
-        `Bạn có muốn tiếp tục đặt hàng không?`
+    if (khoangCach > 20) {
+      alert(
+        `Rất tiếc, địa chỉ của quý khách (cách ${khoangCach.toFixed(1)} km) nằm ngoài phạm vi giao hàng của chúng tôi.\n\n` +
+        "Để đảm bảo chất lượng và độ tươi ngon tốt nhất của thực phẩm, chúng tôi chỉ phục vụ trong bán kính 20km.\n\n" +
+        "Xin quý khách vui lòng thông cảm và cân nhắc đặt hàng tại địa chỉ gần hơn!"
       );
+      setLoading(false);
+      return;
+    }
 
-      if (!confirmOrder) {
-        setLoading(false);
-        return;
+    const phuongThucText = phuongThucThanhToan === "COD" ? "Tiền mặt khi nhận hàng" : "Ví điện tử VNPay";
+    
+    const confirmOrder = window.confirm(
+      `Xác nhận đặt hàng:\n\n` +
+      `• Địa chỉ giao hàng: ${diaChi}\n` +
+      `• Khoảng cách: ${khoangCach.toFixed(1)} km\n` +
+      `• Thời gian giao hàng dự kiến: ${Math.ceil(khoangCach * 2 + 20)} phút\n` +
+      `• Phương thức thanh toán: ${phuongThucText}\n` +
+      `${ghiChu.trim() ? `• Ghi chú: ${ghiChu}\n` : ''}` +
+      `${voucherData ? `• Voucher: ${voucherData.maVoucher} (-${giamGia.toLocaleString()}₫)\n` : ''}` +
+      `• Tổng tiền: ${tongTienCuoi.toLocaleString()}₫\n\n` +
+      `Bạn có muốn tiếp tục đặt hàng không?`
+    );
+
+    if (!confirmOrder) {
+      setLoading(false);
+      return;
+    }
+
+    const donHangData = {
+      nguoiDungId: parseInt(nguoiDungId),
+      diaChiGiaoHang: diaChi,
+      ghiChu: ghiChu.trim() || null,
+      tongTien: tongTienCuoi,
+      tongTienGoc: tongTienGoc,
+      giamGia: giamGia,
+      voucherId: voucherData?.id || null,
+      khoangCach: khoangCach,
+      phuongThucThanhToan: phuongThucThanhToan,
+      chiTietDonHang: gioHang.map(item => ({
+        monAnId: item.monAnId,
+        soLuong: item.soLuong,
+        gia: tinhGiaThucTe(item.monAn),
+        thanhTien: item.soLuong * tinhGiaThucTe(item.monAn)
+      }))
+    };
+
+    console.log("Dữ liệu đặt hàng:", donHangData);
+    
+    const response = await axios.post('/don-hang/dat-hang', donHangData);
+    
+    if (response.data) {
+      const donHangId = response.data.id;
+      
+      // Xóa giỏ hàng
+      try {
+        await axios.delete(`/gio-hang/${nguoiDungId}/clear`);
+      } catch (clearError) {
+        console.error("Lỗi khi xóa giỏ hàng:", clearError);
       }
-
-      const donHangData = {
-        nguoiDungId: parseInt(nguoiDungId),
-        diaChiGiaoHang: diaChi,
-        ghiChu: ghiChu.trim() || null,
-        tongTien: tongTienCuoi, // Tổng tiền sau khi giảm
-        tongTienGoc: tongTienGoc, // Tổng tiền gốc
-        giamGia: giamGia,
-        voucherId: voucherData?.id || null,
-        khoangCach: khoangCach,
-        chiTietDonHang: gioHang.map(item => ({
-          monAnId: item.monAnId,
-          soLuong: item.soLuong,
-          gia: tinhGiaThucTe(item.monAn),
-          thanhTien: item.soLuong * tinhGiaThucTe(item.monAn)
-        }))
-      };
-
-      console.log("Dữ liệu đặt hàng:", donHangData);
       
-      const response = await axios.post('/don-hang/dat-hang', donHangData);
-      
-      if (response.data) {
-        alert("Đặt hàng thành công!");
-        
-        // Xóa giỏ hàng
+      if (phuongThucThanhToan === "VNPAY") {
+        // Thanh toán qua VNPay
+        await handleVNPayPayment(donHangId);
+      } else {
+        // Thanh toán COD - Tạo hóa đơn ngay
         try {
-          await axios.delete(`/gio-hang/${nguoiDungId}/clear`);
-        } catch (clearError) {
-          console.error("Lỗi khi xóa giỏ hàng:", clearError);
+          console.log("Tạo hóa đơn COD cho đơn hàng:", donHangId);
+          await axios.post(`/hoa-don/tao-tu-don-hang/${donHangId}`);
+          console.log("Tạo hóa đơn COD thành công");
+        } catch (hoaDonError) {
+          console.error("Lỗi khi tạo hóa đơn COD:", hoaDonError);
+          // Không cần throw error vì đơn hàng đã được tạo thành công
         }
         
+        alert("Đặt hàng thành công! Hóa đơn đã được tạo. Bạn sẽ thanh toán tiền mặt khi nhận hàng.");
         navigate('/', { 
           state: { 
-            donHangId: response.data.id,
-            tongTien: tongTienCuoi 
+            donHangId: donHangId,
+            tongTien: tongTienCuoi,
+            phuongThucThanhToan: "COD",
+            message: "Đặt hàng thành công! Hóa đơn đã được tạo."
           } 
         });
       }
-      
-    } catch (err) {
-      console.error("Lỗi khi đặt hàng:", err);
-      
-      if (err.response?.status === 400) {
-        const errorMessage = err.response?.data?.message || "Có lỗi xảy ra khi đặt hàng";
-        
-        if (errorMessage.includes("Voucher không hợp lệ")) {
-          // Voucher đã hết hạn hoặc hết số lượng trong lúc đặt hàng
-          alert(errorMessage + "\nVui lòng kiểm tra lại voucher hoặc đặt hàng không dùng voucher.");
-          // Reset voucher
-          handleRemoveVoucher();
-        } else if (errorMessage.includes("khoảng cách")) {
-          alert("Lỗi khi tính khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
-        } else {
-          alert(errorMessage);
-        }
-      } else {
-        alert("Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!");
-      }
-    } finally {
-      setLoading(false);
     }
-  };
+    
+  } catch (err) {
+    console.error("Lỗi khi đặt hàng:", err);
+    
+    if (err.response?.status === 400) {
+      const errorMessage = err.response?.data?.message || "Có lỗi xảy ra khi đặt hàng";
+      
+      if (errorMessage.includes("Voucher không hợp lệ")) {
+        alert(errorMessage + "\nVui lòng kiểm tra lại voucher hoặc đặt hàng không dùng voucher.");
+        handleRemoveVoucher();
+      } else if (errorMessage.includes("khoảng cách")) {
+        alert("Lỗi khi tính khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
+      } else {
+        alert(errorMessage);
+      }
+    } else {
+      alert(err.message || "Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="thanh-toan-container">
@@ -368,6 +432,83 @@ const ThanhToan = () => {
         </div>
       </div>
 
+      {/* Payment Method Section */}
+      <div className="section">
+        <h3 className="section-title">💳 Phương thức thanh toán</h3>
+        <div className="payment-method-section">
+          <div className="payment-options">
+            <label className="payment-option">
+              <input
+                type="radio"
+                name="phuongThucThanhToan"
+                value="COD"
+                checked={phuongThucThanhToan === "COD"}
+                onChange={(e) => setPhuongThucThanhToan(e.target.value)}
+                className="radio-input"
+              />
+              <div className="payment-method-info">
+                <div className="payment-method-name">
+                  <span className="payment-icon">💵</span>
+                  <span>Thanh toán khi nhận hàng (COD)</span>
+                </div>
+                <div className="payment-method-desc">
+                  Thanh toán bằng tiền mặt khi shipper giao hàng
+                </div>
+              </div>
+            </label>
+
+            <label className="payment-option">
+              <input
+                type="radio"
+                name="phuongThucThanhToan"
+                value="VNPAY"
+                checked={phuongThucThanhToan === "VNPAY"}
+                onChange={(e) => setPhuongThucThanhToan(e.target.value)}
+                className="radio-input"
+              />
+              <div className="payment-method-info">
+                <div className="payment-method-name">
+                  <span className="payment-icon">💳</span>
+                  <span>Thanh toán qua VNPay</span>
+                </div>
+                <div className="payment-method-desc">
+                  Thanh toán online qua ví điện tử, ngân hàng
+                </div>
+              </div>
+            </label>
+          </div>
+
+          {/* VNPay Bank Selection */}
+          {phuongThucThanhToan === "VNPAY" && (
+            <div className="vnpay-options">
+              <div className="bank-selection">
+                <label htmlFor="bankCode" className="bank-label">
+                  Chọn phương thức thanh toán VNPay:
+                </label>
+                <select
+                  id="bankCode"
+                  value={bankCode}
+                  onChange={(e) => setBankCode(e.target.value)}
+                  className="bank-select"
+                >
+                  {danhSachNganHang.map((bank) => (
+                    <option key={bank.code} value={bank.code}>
+                      {bank.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="vnpay-note">
+                <div className="note-item">
+                  <span className="note-icon">ℹ️</span>
+                  <span>Bạn sẽ được chuyển hướng đến cổng thanh toán VNPay để hoàn tất giao dịch</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Note Section */}
       <div className="section">
         <h3 className="section-title">📝 Ghi chú đơn hàng</h3>
@@ -383,7 +524,6 @@ const ThanhToan = () => {
         </div>
       </div>
 
-    
       <div className="section">
         <h3 className="section-title">📦 Thông tin giao hàng</h3>
         <div className="delivery-info">
@@ -430,23 +570,22 @@ const ThanhToan = () => {
             <div className="error-message">❌ {error}</div>
           )}
 
-         
           {voucherData && (
             <div className="voucher-applied">
               <div className="voucher-info">
-                <span className="voucher-name"> {voucherData.maVoucher}</span>
+                <span className="voucher-name">✅ {voucherData.maVoucher}</span>
                 <span className="voucher-discount">-{giamGia.toLocaleString()}₫</span>
               </div>
               {voucherData.moTa && (
                 <div className="voucher-description">
-                   {voucherData.moTa}
+                  📋 {voucherData.moTa}
                 </div>
               )}
               <button 
                 onClick={handleRemoveVoucher}
                 className="btn-remove-voucher"
               >
-                 Xóa
+                🗑️ Xóa
               </button>
             </div>
           )}
@@ -493,7 +632,7 @@ const ThanhToan = () => {
                   : "Xác nhận đặt hàng"
             }
           >
-            {loading ? "Đang xử lý..." : "🛒 Xác nhận đặt hàng"}
+            {loading ? "Đang xử lý..." : phuongThucThanhToan === "VNPAY" ? "💳 Thanh toán VNPay" : "🛒 Xác nhận đặt hàng"}
           </button>
         </div>
       </div>

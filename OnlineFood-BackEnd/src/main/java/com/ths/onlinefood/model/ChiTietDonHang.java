@@ -1,5 +1,6 @@
 package com.ths.onlinefood.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -16,8 +17,9 @@ public class ChiTietDonHang {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_don_hang")
+    @JsonIgnoreProperties({"chiTietDonHang", "hoaDon", "hibernateLazyInitializer"})
     private DonHang donHang;
 
     @ManyToOne
