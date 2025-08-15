@@ -46,6 +46,8 @@ public interface HoaDonRepository extends JpaRepository<HoaDon, Long> {
            "LEFT JOIN FETCH ctdh.monAn " +
            "WHERE dh.id = :donHangId")
     Optional<HoaDon> findByDonHangIdWithDetails(@Param("donHangId") Long donHangId);
+    
+ 
 
 
 }

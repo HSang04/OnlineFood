@@ -26,18 +26,62 @@ public class HoaDonService {
         return hoaDonRepository.findAll();
     }
     
-   public Optional<HoaDon> getById(Long id) {
+    public Optional<HoaDon> getById(Long id) {
         return hoaDonRepository.findByIdWithDetails(id);
     }
 
     public Optional<HoaDon> getByDonHangId(Long donHangId) {
         return hoaDonRepository.findByDonHangIdWithDetails(donHangId);
     }
+    
+    /**
+     * Lấy hóa đơn theo ID đơn hàng với kiểm tra email
+     */
+    public HoaDon getByDonHangIdWithEmailCheck(Long donHangId, String userEmail, boolean isAdminOrManager) {
+        try {
+            // Tìm hóa đơn
+            Optional<HoaDon> optionalHoaDon = hoaDonRepository.findByDonHangIdWithDetails(donHangId);
+            
+            if (!optionalHoaDon.isPresent()) {
+                return null; // Không tìm thấy hóa đơn
+            }
+            
+            HoaDon hoaDon = optionalHoaDon.get();
+            
+            // Nếu là Admin hoặc Quản lý thì cho phép xem tất cả
+            if (isAdminOrManager) {
+                System.out.println("Admin/Quản lý truy cập hóa đơn: " + hoaDon.getId());
+                return hoaDon;
+            }
+            
+            // Kiểm tra email của người dùng sở hữu đơn hàng
+            DonHang donHang = hoaDon.getDonHang();
+            if (donHang == null || donHang.getNguoiDung() == null) {
+                throw new SecurityException("Không thể xác định chủ sở hữu đơn hàng");
+            }
+            
+            String ownerEmail = donHang.getNguoiDung().getEmail();
+            
+            if (ownerEmail == null || !ownerEmail.equals(userEmail)) {
+                System.out.println("Từ chối truy cập: " + userEmail + " != " + ownerEmail);
+                throw new SecurityException("Bạn không có quyền xem hóa đơn này");
+            }
+            
+            System.out.println("Cho phép truy cập hóa đơn: " + hoaDon.getId() + " cho email: " + userEmail);
+            return hoaDon;
+            
+        } catch (SecurityException e) {
+            throw e; // Ném lại lỗi bảo mật
+        } catch (Exception e) {
+            System.err.println("Lỗi khi kiểm tra quyền truy cập hóa đơn: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Có lỗi xảy ra khi kiểm tra quyền truy cập: " + e.getMessage());
+        }
+    }
    
     @Transactional
     public HoaDon taoHoaDonTuDonHang(Long donHangId, String phuongThucThanhToan, String maGiaoDich) {
         try {
-
             DonHang donHang = donHangRepository.findById(donHangId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + donHangId));
                   
@@ -47,22 +91,18 @@ public class HoaDonService {
                 throw new RuntimeException("Đơn hàng đã có hóa đơn");
             }
             
-            
             NguoiDung nguoiDung = donHang.getNguoiDung();
             if (nguoiDung == null) {
                 throw new RuntimeException("Không tìm thấy người dùng cho đơn hàng");
             }
 
-     
             HoaDon hoaDon = new HoaDon();
             hoaDon.setDonHang(donHang);
             
-           
             hoaDon.setHoTen(nguoiDung.getHoTen());
             hoaDon.setDiaChi(donHang.getDiaChiGiaoHang());
             hoaDon.setSoDienThoai(nguoiDung.getSoDienThoai());
             
-           
             Double tongTien = donHang.getTongTien();
             if (tongTien == null || tongTien <= 0) {
                 throw new RuntimeException("Tổng tiền đơn hàng không hợp lệ: " + tongTien);
@@ -79,7 +119,6 @@ public class HoaDonService {
             }
             
             hoaDon.setMaGD(maGiaoDich);
-            
             
             HoaDon savedHoaDon = hoaDonRepository.save(hoaDon);
             
@@ -119,7 +158,6 @@ public class HoaDonService {
             hd.setTrangThai(newHoaDon.getTrangThai());
             hd.setMaGD(newHoaDon.getMaGD());
             
-           
             if (newHoaDon.getTongTien() != null && newHoaDon.getTongTien() > 0) {
                 hd.setTongTien(newHoaDon.getTongTien());
             }
@@ -128,17 +166,14 @@ public class HoaDonService {
         }).orElse(null);
     }
     
-    
-      @Transactional
+    @Transactional
     public void capNhatThanhToanKhiHoanThanh(Long donHangId) {
         try {
-          
             Optional<HoaDon> optionalHoaDon = hoaDonRepository.findByDonHangId(donHangId);
             
             if (optionalHoaDon.isPresent()) {
                 HoaDon hoaDon = optionalHoaDon.get();
                 
-              
                 if ("CHUA_THANH_TOAN".equals(hoaDon.getTrangThai())) {
                     hoaDon.setTrangThai("DA_THANH_TOAN");
                     hoaDon.setThoiGianThanhToan(new Date());
@@ -149,7 +184,6 @@ public class HoaDonService {
                     System.out.println("Hóa đơn đã được thanh toán trước đó cho đơn hàng: " + donHangId);
                 }
             } else {
-              
                 System.out.println("Chưa có hóa đơn cho đơn hàng " + donHangId + ", tạo hóa đơn COD và đánh dấu đã thanh toán");
             }
             

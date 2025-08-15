@@ -30,10 +30,44 @@ public class HoaDonController {
     }
     
     @GetMapping("/don-hang/{donHangId}")
-    public ResponseEntity<HoaDon> getByDonHangId(@PathVariable Long donHangId) {
-        return hoaDonService.getByDonHangId(donHangId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> getByDonHangId(
+            @PathVariable Long donHangId,
+            @RequestHeader(value = "User-Email", required = false) String userEmail,
+            @RequestHeader(value = "User-Role", required = false) String userRole) {
+        
+        try {
+            // Kiểm tra quyền truy cập
+            if (userEmail == null || userEmail.trim().isEmpty()) {
+                return ResponseEntity.status(401).body(Map.of(
+                    "success", false,
+                    "message", "Thiếu thông tin email người dùng"
+                ));
+            }
+            
+            // Admin và Quản lý có thể xem tất cả hóa đơn
+            boolean isAdminOrManager = "ADMIN".equals(userRole) || "QUANLY".equals(userRole);
+            
+            HoaDon hoaDon = hoaDonService.getByDonHangIdWithEmailCheck(donHangId, userEmail, isAdminOrManager);
+            
+            if (hoaDon == null) {
+                return ResponseEntity.notFound().build();
+            }
+            
+            return ResponseEntity.ok(hoaDon);
+            
+        } catch (SecurityException e) {
+          
+            return ResponseEntity.status(403).body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        } catch (Exception e) {
+            // Lỗi khác
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "message", "Có lỗi xảy ra khi tải hóa đơn: " + e.getMessage()
+            ));
+        }
     }
     
     /**
@@ -76,7 +110,6 @@ public class HoaDonController {
         }
     }
 
-   
     @PutMapping("/cap-nhat-hoan-thanh/{donHangId}")
     public ResponseEntity<?> capNhatThanhToanKhiHoanThanh(@PathVariable Long donHangId) {
         try {

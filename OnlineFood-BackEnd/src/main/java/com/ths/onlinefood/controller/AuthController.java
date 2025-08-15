@@ -47,12 +47,10 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public ResponseEntity<AuthResponse> createUserHandler(@RequestBody NguoiDungDTO userRequest) throws Exception {
+    public ResponseEntity<?> createUserHandler(@RequestBody NguoiDungDTO userRequest) {
         try {
-           
             NguoiDung savedUser = nguoiDungService.createUserByPublic(userRequest);
-            
-           
+
             String jwt = generateJwtForUser(savedUser);
 
             AuthResponse authResponse = new AuthResponse();
@@ -63,17 +61,17 @@ public class AuthController {
 
             return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
         } catch (Exception e) {
-            throw new Exception("Lỗi đăng ký: " + e.getMessage());
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Collections.singletonMap("message", e.getMessage()));
         }
     }
-    
+
     @PostMapping("/signup-by-admin")
-    public ResponseEntity<AuthResponse> createUserByAdmin(@RequestBody NguoiDungDTO userRequest) throws Exception {
+    public ResponseEntity<?> createUserByAdmin(@RequestBody NguoiDungDTO userRequest) {
         try {
-           
             NguoiDung savedUser = nguoiDungService.createUserByAdmin(userRequest);
-            
-            
+
             String jwt = generateJwtForUser(savedUser);
 
             AuthResponse authResponse = new AuthResponse();
@@ -84,7 +82,9 @@ public class AuthController {
 
             return new ResponseEntity<>(authResponse, HttpStatus.CREATED);
         } catch (Exception e) {
-            throw new Exception("Lỗi đăng ký: " + e.getMessage());
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Collections.singletonMap("message", e.getMessage()));
         }
     }
 

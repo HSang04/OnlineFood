@@ -28,7 +28,7 @@
 9/8 : Cần thêm trạng thái cho Voucher  ( Đã fix )
       Thêm Họ tên người dùng, Email, Địa chỉ vào Hóa đơn (đã fix)
       Đưa username, email, họ tên người dùng về null nếu quyết định xóa  ( Đã fix) 
-      Cần thông báo lỗi rõ ràng khi đăng nhập/ đăng ký không hợp lệ 
+      Cần thông báo lỗi rõ ràng khi đăng nhập/ đăng ký không hợp lệ ( đã fix )
 	Khi áp dụng Voucher ( hiện tên Voucher và mô tả thay vì emoji như hiện tại )
 	Khi dat hang co voucher thì cần - so_luong và + da_su_dung ( Đã fix )
 10/8 : Vô hiệu hóa tài khoản + Xóa tài khoản ( User tự thực hiện ) ( Đã có )
@@ -37,3 +37,4 @@
 
 14/8 : fix in hóa đơn bị dư chữ OU FOOD ( Đã fix )
 15/8: Khi người dùng nhập địa chỉ đúng nhưng không định vị được thì báo lỗi rõ ràng yêu cầu người dùng nhập chi tiết hơn ( Ví dụ: UBND Phường Võ Thị Sáu, Quận 3, TP. HCM không định vị được )
+	Bảo mật hóa đơn ( Đã fix )

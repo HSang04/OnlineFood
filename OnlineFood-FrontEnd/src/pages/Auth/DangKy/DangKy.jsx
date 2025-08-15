@@ -51,22 +51,43 @@ const DangKy = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const validationErrors = validateForm();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+  e.preventDefault();
+  const validationErrors = validateForm();
+  if (Object.keys(validationErrors).length > 0) {
+    setErrors(validationErrors);
+    return;
+  }
 
-    try {
-      await axios.post('http://localhost:8080/auth/signup', formData);
-      alert('Đăng ký thành công! Hãy đăng nhập.');
-      navigate('/login');
-    } catch (error) {
-      alert('Lỗi đăng ký: ' + (error.response?.data?.message || 'Không thể kết nối máy chủ'));
+  try {
+    await axios.post('http://localhost:8080/auth/signup', formData);
+    alert('Đăng ký thành công! Hãy đăng nhập.');
+    navigate('/login');
+  } catch (error) {
+    console.error('Lỗi đăng ký:', error);
+    
+    let errorMessage = 'Không thể kết nối máy chủ';
+    
+    if (error.response) {
+      if (error.response.data) {
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        }
+      } else {
+        errorMessage = `Lỗi server: ${error.response.status}`;
+      }
+    } else if (error.request) {
+      errorMessage = 'Không thể kết nối tới máy chủ';
+    } else {
+      errorMessage = error.message || 'Đã có lỗi xảy ra';
     }
-  };
-
+    
+    alert('Lỗi đăng ký: ' + errorMessage);
+  }
+};
   return (
     <div className="login-container">
       <form className="register-form" onSubmit={handleSubmit}>
