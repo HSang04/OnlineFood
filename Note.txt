@@ -26,7 +26,7 @@
 6/8 : Cần fix thêm chỗ tính khoảng cách ở phần Thanh Toán. + Xử lý dưới bao nhiêu km thì mới giao hàng ( Đã fix )
 8/8 : Người dùng chưa đăng nhập thì cũng load được Thực đơn ( Da fix )
 9/8 : Cần thêm trạng thái cho Voucher  ( Đã fix )
-      Thêm Họ tên người dùng, Email, Địa chỉ vào Hóa đơn 
+      Thêm Họ tên người dùng, Email, Địa chỉ vào Hóa đơn (đã fix)
       Đưa username, email, họ tên người dùng về null nếu quyết định xóa  ( Đã fix) 
       Cần thông báo lỗi rõ ràng khi đăng nhập/ đăng ký không hợp lệ 
 	Khi áp dụng Voucher ( hiện tên Voucher và mô tả thay vì emoji như hiện tại )
@@ -35,4 +35,5 @@
 13/8 : Xử lý quên mật khẩu
 	Admin quyền tối thượng ( sửa được username + email )
 
-14/8 : fix in hóa đơn bị dư chữ OU FOOD
+14/8 : fix in hóa đơn bị dư chữ OU FOOD ( Đã fix )
+15/8: Khi người dùng nhập địa chỉ đúng nhưng không định vị được thì báo lỗi rõ ràng yêu cầu người dùng nhập chi tiết hơn ( Ví dụ: UBND Phường Võ Thị Sáu, Quận 3, TP. HCM không định vị được )

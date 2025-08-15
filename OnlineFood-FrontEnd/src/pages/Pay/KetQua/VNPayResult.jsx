@@ -10,6 +10,7 @@ const VNPayResult = () => {
   const [paymentResult, setPaymentResult] = useState(null);
   const [error, setError] = useState('');
   const [debugInfo, setDebugInfo] = useState('');
+  const [donHangId, setDonHangId] = useState(null);
 
   useEffect(() => {
     const handlePaymentResult = async () => {
@@ -17,7 +18,7 @@ const VNPayResult = () => {
         const urlParams = new URLSearchParams(location.search);
         const queryParams = {};
         
-        // Lấy tất cả params từ URL
+      
         for (let [key, value] of urlParams.entries()) {
           queryParams[key] = value;
         }
@@ -25,48 +26,28 @@ const VNPayResult = () => {
         console.log('VNPay callback params:', queryParams);
         setDebugInfo(`Params nhận được: ${JSON.stringify(queryParams, null, 2)}`);
 
-        // Kiểm tra xem có đủ thông tin cần thiết không
+      
         if (!queryParams.vnp_TxnRef || !queryParams.vnp_ResponseCode) {
           throw new Error('Thiếu thông tin thanh toán cần thiết');
         }
 
-        // Debug: Log URL sẽ được gọi
+ 
         const fullUrl = axios.defaults.baseURL + '/payment-result';
         console.log('Đang gọi API:', fullUrl);
         setDebugInfo(prev => prev + `\n\nĐang gọi API: ${fullUrl}`);
 
-        // Gọi API xử lý kết quả thanh toán
+    
         const response = await axios.get('/payment-result', {
           params: queryParams,
-          timeout: 10000 // Set timeout 10 giây
+          timeout: 10000 
         });
 
         console.log('Payment result:', response.data);
         setPaymentResult(response.data);
 
-        // Nếu thanh toán thành công, tạo hóa đơn
+      
         if (response.data.code === '00') {
-          const bookingId = queryParams.vnp_TxnRef;
-          const vnpTransactionNo = queryParams.vnp_TransactionNo;
-          
-          if (bookingId && vnpTransactionNo) {
-            try {
-              console.log('Đang tạo hóa đơn cho đơn hàng:', bookingId);
-              
-              // Tạo hóa đơn cho thanh toán VNPay
-              const hoaDonResponse = await axios.post('/hoa-don/tao-vnpay', {
-                donHangId: parseInt(bookingId),
-                vnpTransactionNo: vnpTransactionNo
-              });
-              
-              console.log('Tạo hóa đơn thành công:', hoaDonResponse.data);
-              
-            } catch (hoaDonError) {
-              console.error('Lỗi khi tạo hóa đơn:', hoaDonError);
-              // Không throw error ở đây vì thanh toán đã thành công
-              // Chỉ log để admin có thể xử lý sau
-            }
-          }
+          await handleSuccessfulPayment(queryParams);
         }
 
       } catch (err) {
@@ -76,17 +57,17 @@ const VNPayResult = () => {
         let debugDetail = '';
         
         if (err.response) {
-          // Lỗi từ server (4xx, 5xx)
+         
           console.error('Response error:', err.response);
           errorMessage = `Lỗi ${err.response.status}: ${err.response.data?.message || err.response.statusText}`;
           debugDetail = `Response Status: ${err.response.status}\nResponse Data: ${JSON.stringify(err.response.data, null, 2)}`;
         } else if (err.request) {
-          // Request được gửi nhưng không có response
+          
           console.error('Network error:', err.request);
           errorMessage = 'Không thể kết nối đến server. Kiểm tra:\n1. Backend có đang chạy?\n2. Port có đúng là 8080?\n3. CORS có được cấu hình?';
           debugDetail = `Request: ${err.request}`;
         } else {
-          // Lỗi trong quá trình setup request
+     
           console.error('Error:', err.message);
           errorMessage = `Có lỗi xảy ra: ${err.message}`;
           debugDetail = err.message;
@@ -102,20 +83,95 @@ const VNPayResult = () => {
     handlePaymentResult();
   }, [location.search]);
 
-  // Hàm xử lý khi không gọi được API - xử lý trực tiếp từ URL params
-  const handleDirectProcessing = () => {
+
+  const handleSuccessfulPayment = async (queryParams) => {
+    try {
+      console.log('Thanh toán thành công, đang tạo đơn hàng...');
+      
+   
+      const pendingOrderData = sessionStorage.getItem('pendingOrder');
+      const cartToDeleteUserId = sessionStorage.getItem('cartToDelete');
+      
+      if (!pendingOrderData) {
+        throw new Error('Không tìm thấy thông tin đơn hàng đã lưu');
+      }
+
+      const donHangData = JSON.parse(pendingOrderData);
+      console.log('Dữ liệu đơn hàng từ sessionStorage:', donHangData);
+
+    
+      const donHangResponse = await axios.post('/don-hang/dat-hang', donHangData);
+      
+      if (donHangResponse.data && donHangResponse.data.id) {
+        const createdDonHangId = donHangResponse.data.id;
+        setDonHangId(createdDonHangId);
+        console.log('Tạo đơn hàng thành công với ID:', createdDonHangId);
+
+        
+        if (cartToDeleteUserId) {
+          try {
+            await axios.delete(`/gio-hang/${cartToDeleteUserId}/clear`);
+            console.log('Xóa giỏ hàng thành công');
+          } catch (clearError) {
+            console.error('Lỗi khi xóa giỏ hàng:', clearError);
+          }
+        }
+
+       
+        const vnpTransactionNo = queryParams.vnp_TransactionNo;
+        if (vnpTransactionNo) {
+          try {
+            console.log('Đang tạo hóa đơn VNPay cho đơn hàng:', createdDonHangId);
+            
+            const hoaDonResponse = await axios.post('/hoa-don/tao-vnpay', {
+              donHangId: createdDonHangId,
+              vnpTransactionNo: vnpTransactionNo
+            });
+            
+            console.log('Tạo hóa đơn VNPay thành công:', hoaDonResponse.data);
+            
+          } catch (hoaDonError) {
+            console.error('Lỗi khi tạo hóa đơn VNPay:', hoaDonError);
+          
+          }
+        }
+
+    
+        sessionStorage.removeItem('pendingOrder');
+        sessionStorage.removeItem('cartToDelete');
+
+      } else {
+        throw new Error('Không thể tạo đơn hàng');
+      }
+
+    } catch (err) {
+      console.error('Lỗi khi tạo đơn hàng sau thanh toán thành công:', err);
+      setError(prev => prev + '\n\nLỗi khi tạo đơn hàng: ' + err.message);
+    }
+  };
+
+
+  const handleDirectProcessing = async () => {
     const urlParams = new URLSearchParams(location.search);
     const vnp_ResponseCode = urlParams.get('vnp_ResponseCode');
     
     if (vnp_ResponseCode === '00') {
-      // Thanh toán thành công
+   
+      const queryParams = {};
+      for (let [key, value] of urlParams.entries()) {
+        queryParams[key] = value;
+      }
+
       setPaymentResult({
         code: '00',
         message: 'Payment successful (processed locally)',
         transactionId: urlParams.get('vnp_TransactionNo')
       });
+
+
+      await handleSuccessfulPayment(queryParams);
     } else {
-      // Thanh toán thất bại
+   
       setPaymentResult({
         code: vnp_ResponseCode,
         message: `Payment failed with code: ${vnp_ResponseCode}`
@@ -133,7 +189,7 @@ const VNPayResult = () => {
         return {
           icon: '✅',
           title: 'Thanh toán thành công!',
-          message: 'Đơn hàng của bạn đã được thanh toán thành công. Chúng tôi sẽ xử lý và giao hàng trong thời gian sớm nhất.',
+          message: 'Đơn hàng của bạn đã được thanh toán và tạo thành công. Chúng tôi sẽ xử lý và giao hàng trong thời gian sớm nhất.',
           type: 'success'
         };
       case '24':
@@ -145,7 +201,6 @@ const VNPayResult = () => {
         };
       case '11':
         return {
-          icon: '⏰',
           title: 'Giao dịch hết hạn',
           message: 'Thời gian thanh toán đã hết hạn.',
           type: 'expired'
@@ -165,13 +220,18 @@ const VNPayResult = () => {
   };
 
   const handleViewOrders = () => {
-    navigate('/don-hang-cua-toi');
+    navigate('/lich-su-giao-dich');
   };
 
   const handleViewInvoice = () => {
-    const donHangId = new URLSearchParams(location.search).get('vnp_TxnRef');
     if (donHangId) {
       navigate(`/hoa-don/${donHangId}`);
+    } else {
+      
+      const donHangIdFromUrl = new URLSearchParams(location.search).get('vnp_TxnRef');
+      if (donHangIdFromUrl) {
+        navigate(`/hoa-don/${donHangIdFromUrl}`);
+      }
     }
   };
 
@@ -188,11 +248,12 @@ const VNPayResult = () => {
           <p>Vui lòng chờ trong giây lát</p>
           <div className="loading-steps">
             <div className="step">✓ Xác thực thanh toán</div>
-            <div className="step">⏳ Tạo hóa đơn</div>
-            <div className="step">⏳ Cập nhật đơn hàng</div>
+            <div className="step">Tạo đơn hàng</div>
+            <div className="step">Tạo hóa đơn</div>
+            <div className="step">Cập nhật trạng thái</div>
           </div>
           
-          {/* Nút xử lý trực tiếp nếu API fail */}
+         
           <div style={{ marginTop: '20px' }}>
             <button 
               onClick={handleDirectProcessing} 
@@ -215,7 +276,7 @@ const VNPayResult = () => {
           <h2>Có lỗi xảy ra</h2>
           <p style={{ whiteSpace: 'pre-line' }}>{error}</p>
           
-          {/* Debug Info */}
+       
           <details style={{ marginTop: '20px', padding: '10px', backgroundColor: '#f8f9fa', border: '1px solid #dee2e6' }}>
             <summary style={{ cursor: 'pointer', fontWeight: 'bold' }}>Debug Information (Click to expand)</summary>
             <pre style={{ fontSize: '12px', overflow: 'auto', marginTop: '10px' }}>
@@ -253,7 +314,7 @@ const VNPayResult = () => {
             <h3>Thông tin giao dịch</h3>
             <div className="detail-row">
               <span className="label">Mã đơn hàng:</span>
-              <span className="value">{new URLSearchParams(location.search).get('vnp_TxnRef')}</span>
+              <span className="value">{donHangId || new URLSearchParams(location.search).get('vnp_TxnRef')}</span>
             </div>
             {paymentResult.transactionId && (
               <div className="detail-row">
@@ -310,11 +371,11 @@ const VNPayResult = () => {
           <div className="success-note">
             <div className="note-item">
               <span className="note-icon">📞</span>
-              <span>Nếu có thắc mắc, vui lòng liên hệ hotline: 1900-xxxx</span>
+              <span>Nếu có thắc mắc, vui lòng liên hệ hotline: 1900 2403</span>
             </div>
             <div className="note-item">
               <span className="note-icon">📧</span>
-              <span>Thông tin chi tiết đã được gửi qua email của bạn</span>
+              <span>Xin cảm ơn quý khách đã tin tưởng và sử dụng dịch vụ của chúng tôi. Chúng tôi rất mong được phục vụ quý khách lần sau. </span>
             </div>
           </div>
         )}

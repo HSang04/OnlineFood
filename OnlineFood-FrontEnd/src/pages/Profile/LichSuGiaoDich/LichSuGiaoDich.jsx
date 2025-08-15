@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "../../../services/axiosInstance";
 import "./LichSuGiaoDich.css";
 
 const LichSuGiaoDich = () => {
+  const navigate = useNavigate();
   const [donHangs, setDonHangs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -266,6 +268,16 @@ const LichSuGiaoDich = () => {
     return status === "DANG_XU_LY" || status === "Đang xử lý";
   };
 
+  // Kiểm tra xem đơn hàng có thể xem hóa đơn không
+  const canViewInvoice = (status) => {
+    return status === "HOAN_THANH" || status === "Hoàn thành";
+  };
+
+  // Hàm xem hóa đơn
+  const viewInvoice = (orderId) => {
+    navigate(`/hoa-don/${orderId}`);
+  };
+
   if (loading) {
     return (
       <div className="lichSuGiaoDich-container">
@@ -445,6 +457,15 @@ const LichSuGiaoDich = () => {
                       {cancelling ? "Đang hủy..." : "Hủy đơn"}
                     </button>
                   )}
+
+                  {canViewInvoice(order.trangThai) && (
+                    <button
+                      className="lichSuGiaoDich-btnViewInvoice"
+                      onClick={() => viewInvoice(order.id)}
+                    >
+                      🧾 Xem hóa đơn
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -492,6 +513,10 @@ const LichSuGiaoDich = () => {
                       <div className="lichSuGiaoDich-detailItem">
                         <span className="lichSuGiaoDich-label">Ghi chú:</span>
                         <span>{selectedOrder.ghiChu || "Không có ghi chú"}</span>
+                      </div>
+                      <div className="lichSuGiaoDich-detailItem">
+                        <span className="lichSuGiaoDich-label">Phương thức thanh toán:</span>
+                        <span>{selectedOrder.phuongThucThanhToan === "COD" ? "Tiền mặt khi nhận hàng" : "VNPay"}</span>
                       </div>
                     </div>
                   </div>
@@ -571,6 +596,15 @@ const LichSuGiaoDich = () => {
                         disabled={cancelling}
                       >
                         {cancelling ? "Đang hủy..." : "Hủy đơn hàng"}
+                      </button>
+                    )}
+                    
+                    {canViewInvoice(selectedOrder.trangThai) && (
+                      <button
+                        className="lichSuGiaoDich-btnModalViewInvoice"
+                        onClick={() => viewInvoice(selectedOrder.id)}
+                      >
+                        🧾 Xem hóa đơn
                       </button>
                     )}
                   </div>

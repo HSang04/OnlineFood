@@ -16,26 +16,26 @@ import java.util.Map;
 public class HoaDonController {
     
     private final HoaDonService hoaDonService;
-
+    
     @GetMapping
     public List<HoaDon> getAll() {
         return hoaDonService.getAll();
     }
-
+    
     @GetMapping("/{id}")
     public ResponseEntity<HoaDon> getById(@PathVariable Long id) {
         return hoaDonService.getById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-
+    
     @GetMapping("/don-hang/{donHangId}")
     public ResponseEntity<HoaDon> getByDonHangId(@PathVariable Long donHangId) {
         return hoaDonService.getByDonHangId(donHangId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-
+    
     /**
      * Tạo hóa đơn từ đơn hàng (dùng cho COD)
      */
@@ -51,7 +51,7 @@ public class HoaDonController {
             ));
         }
     }
-
+    
     /**
      * Tạo hóa đơn cho thanh toán VNPay
      */
@@ -76,6 +76,24 @@ public class HoaDonController {
         }
     }
 
+   
+    @PutMapping("/cap-nhat-hoan-thanh/{donHangId}")
+    public ResponseEntity<?> capNhatThanhToanKhiHoanThanh(@PathVariable Long donHangId) {
+        try {
+            hoaDonService.capNhatThanhToanKhiHoanThanh(donHangId);
+            
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Đã cập nhật trạng thái hóa đơn thành công"
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "success", false,
+                "message", e.getMessage()
+            ));
+        }
+    }
+    
     @PostMapping
     public ResponseEntity<HoaDon> create(@RequestBody HoaDon hoaDon) {
         try {
@@ -85,13 +103,13 @@ public class HoaDonController {
             return ResponseEntity.badRequest().build();
         }
     }
-
+    
     @PutMapping("/{id}")
     public ResponseEntity<HoaDon> update(@PathVariable Long id, @RequestBody HoaDon hoaDon) {
         HoaDon updated = hoaDonService.update(id, hoaDon);
         return updated != null ? ResponseEntity.ok(updated) : ResponseEntity.notFound().build();
     }
-
+    
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable Long id) {
         boolean deleted = hoaDonService.delete(id);

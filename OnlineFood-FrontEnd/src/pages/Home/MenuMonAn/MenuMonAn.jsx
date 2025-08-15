@@ -81,10 +81,6 @@ const MenuMonAn = () => {
             return a.giaKhuyenMai - b.giaKhuyenMai;
           case "gia-giam":
             return b.giaKhuyenMai - a.giaKhuyenMai;
-          case "ten-az":
-            return a.tenMonAn.localeCompare(b.tenMonAn);
-          case "ten-za":
-            return b.tenMonAn.localeCompare(a.tenMonAn);
           case "khuyen-mai":
           
             return b.coKhuyenMai - a.coKhuyenMai;
@@ -159,8 +155,6 @@ const MenuMonAn = () => {
                 <option value="">Sắp xếp theo</option>
                 <option value="gia-tang">Giá: Thấp đến cao</option>
                 <option value="gia-giam">Giá: Cao đến thấp</option>
-                <option value="ten-az">Tên: A-Z</option>
-                <option value="ten-za">Tên: Z-A</option>
                 <option value="khuyen-mai">Khuyến mãi hot</option>
               </select>
 

@@ -26,10 +26,6 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.stereotype.Service;
 
-/**
- *
- * @author toquocbinh2102
- */
 @Service
 public class VNPayService {
 
@@ -110,13 +106,13 @@ public class VNPayService {
             return false;
         }
 
-        // Tạo TreeMap để sort theo key
+  
         Map<String, String> sortedParams = new TreeMap<>();
         for (Map.Entry<String, String> entry : fields.entrySet()) {
             String fieldName = entry.getKey();
             String fieldValue = entry.getValue();
 
-            // Bỏ qua secure hash parameters
+          
             if (!fieldName.equals("vnp_SecureHash") && !fieldName.equals("vnp_SecureHashType")) {
                 if (fieldValue != null && fieldValue.length() > 0) {
                     sortedParams.put(fieldName, fieldValue);
@@ -124,7 +120,7 @@ public class VNPayService {
             }
         }
 
-        // Tạo hash data string với URL encoding (giống như khi tạo payment)
+        
         StringBuilder hashData = new StringBuilder();
         Iterator<Map.Entry<String, String>> itr = sortedParams.entrySet().iterator();
 

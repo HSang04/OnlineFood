@@ -18,14 +18,14 @@ const ThanhToan = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   
-  // Thêm state cho phương thức thanh toán
-  const [phuongThucThanhToan, setPhuongThucThanhToan] = useState("COD"); // COD hoặc VNPAY
-  const [bankCode, setBankCode] = useState(""); // Mã ngân hàng cho VNPay
+
+  const [phuongThucThanhToan, setPhuongThucThanhToan] = useState("COD"); 
+  const [bankCode, setBankCode] = useState(""); 
 
   const nguoiDungId = localStorage.getItem("idNguoiDung");
   const jwt = localStorage.getItem("jwt");
 
-  // Danh sách ngân hàng hỗ trợ VNPay
+ 
   const danhSachNganHang = [
     { code: "", name: "Cổng thanh toán VNPay" },
     { code: "VNPAYQR", name: "VNPay QR" },
@@ -176,95 +176,12 @@ const ThanhToan = () => {
     setError("");
   };
 
-  // Tính tổng tiền cuối cùng
+ 
   const tongTienCuoi = tongTienGoc - giamGia;
 
-  const handleVNPayPayment = async (donHangId) => {
-  try {
-    console.log("Đang tạo thanh toán VNPay...");
-    const response = await axios.get('/create-payment', {
-      params: {
-        bookingId: donHangId.toString(),
-        amount: tongTienCuoi,
-        bankCode: bankCode
-      }
-    });
 
-    console.log("Phản hồi từ API create-payment:", response.data);
-
-    if (response.data.code === "00") {
-      // Chuyển hướng đến VNPay
-      window.location.href = response.data.paymentUrl;
-    } else {
-      console.error("Lỗi VNPay - Mã code khác 00:", response.data);
-      throw new Error(response.data.message || "Lỗi tạo thanh toán VNPay");
-    }
-  } catch (err) {
-    console.error("Lỗi khi tạo thanh toán VNPay:", err);
-    if (err.response) {
-      console.error("Status:", err.response.status);
-      console.error("Headers:", err.response.headers);
-      console.error("Data:", err.response.data);
-    } else {
-      console.error("Message:", err.message);
-    }
-    throw new Error("Không thể tạo thanh toán VNPay. Vui lòng thử lại!");
-  }
-};
-
- const handleDatHang = async () => {
-  if (!diaChi.trim()) {
-    alert("Vui lòng chọn hoặc nhập địa chỉ giao hàng");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    console.log("Đang kiểm tra khoảng cách giao hàng...");
-    const distanceRes = await axios.get("/khoang-cach/dia-chi", {
-      params: { diaChi: diaChi },
-    });
-
-    if (!distanceRes.data || distanceRes.data.khoangCach_km === undefined) {
-      alert("Không thể xác định khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
-      setLoading(false);
-      return;
-    }
-
-    const khoangCach = distanceRes.data.khoangCach_km;
-    console.log(`Khoảng cách: ${khoangCach} km`);
-
-    if (khoangCach > 20) {
-      alert(
-        `Rất tiếc, địa chỉ của quý khách (cách ${khoangCach.toFixed(1)} km) nằm ngoài phạm vi giao hàng của chúng tôi.\n\n` +
-        "Để đảm bảo chất lượng và độ tươi ngon tốt nhất của thực phẩm, chúng tôi chỉ phục vụ trong bán kính 20km.\n\n" +
-        "Xin quý khách vui lòng thông cảm và cân nhắc đặt hàng tại địa chỉ gần hơn!"
-      );
-      setLoading(false);
-      return;
-    }
-
-    const phuongThucText = phuongThucThanhToan === "COD" ? "Tiền mặt khi nhận hàng" : "Ví điện tử VNPay";
-    
-    const confirmOrder = window.confirm(
-      `Xác nhận đặt hàng:\n\n` +
-      `• Địa chỉ giao hàng: ${diaChi}\n` +
-      `• Khoảng cách: ${khoangCach.toFixed(1)} km\n` +
-      `• Thời gian giao hàng dự kiến: ${Math.ceil(khoangCach * 2 + 20)} phút\n` +
-      `• Phương thức thanh toán: ${phuongThucText}\n` +
-      `${ghiChu.trim() ? `• Ghi chú: ${ghiChu}\n` : ''}` +
-      `${voucherData ? `• Voucher: ${voucherData.maVoucher} (-${giamGia.toLocaleString()}₫)\n` : ''}` +
-      `• Tổng tiền: ${tongTienCuoi.toLocaleString()}₫\n\n` +
-      `Bạn có muốn tiếp tục đặt hàng không?`
-    );
-
-    if (!confirmOrder) {
-      setLoading(false);
-      return;
-    }
-
-    const donHangData = {
+  const taoDuLieuDonHang = (khoangCach) => {
+    return {
       nguoiDungId: parseInt(nguoiDungId),
       diaChiGiaoHang: diaChi,
       ghiChu: ghiChu.trim() || null,
@@ -281,74 +198,171 @@ const ThanhToan = () => {
         thanhTien: item.soLuong * tinhGiaThucTe(item.monAn)
       }))
     };
+  };
 
-    console.log("Dữ liệu đặt hàng:", donHangData);
-    
-    const response = await axios.post('/don-hang/dat-hang', donHangData);
-    
-    if (response.data) {
-      const donHangId = response.data.id;
+
+  const handleVNPayPayment = async (khoangCach) => {
+    try {
+      console.log("Đang chuẩn bị thanh toán VNPay...");
       
-      // Xóa giỏ hàng
-      try {
-        await axios.delete(`/gio-hang/${nguoiDungId}/clear`);
-      } catch (clearError) {
-        console.error("Lỗi khi xóa giỏ hàng:", clearError);
-      }
+     
+      const donHangData = taoDuLieuDonHang(khoangCach);
+      sessionStorage.setItem('pendingOrder', JSON.stringify(donHangData));
+      sessionStorage.setItem('cartToDelete', nguoiDungId);
       
-      if (phuongThucThanhToan === "VNPAY") {
-        // Thanh toán qua VNPay
-        await handleVNPayPayment(donHangId);
-      } else {
-        // Thanh toán COD - Tạo hóa đơn ngay
-        try {
-          console.log("Tạo hóa đơn COD cho đơn hàng:", donHangId);
-          await axios.post(`/hoa-don/tao-tu-don-hang/${donHangId}`);
-          console.log("Tạo hóa đơn COD thành công");
-        } catch (hoaDonError) {
-          console.error("Lỗi khi tạo hóa đơn COD:", hoaDonError);
-          // Không cần throw error vì đơn hàng đã được tạo thành công
+     
+      const tempOrderId = Date.now();
+      
+      const response = await axios.get('/create-payment', {
+        params: {
+          bookingId: tempOrderId.toString(),
+          amount: tongTienCuoi,
+          bankCode: bankCode
         }
+      });
+
+      console.log("Phản hồi từ API create-payment:", response.data);
+
+      if (response.data.code === "00") {
         
-        alert("Đặt hàng thành công! Hóa đơn đã được tạo. Bạn sẽ thanh toán tiền mặt khi nhận hàng.");
-        navigate('/', { 
-          state: { 
-            donHangId: donHangId,
-            tongTien: tongTienCuoi,
-            phuongThucThanhToan: "COD",
-            message: "Đặt hàng thành công! Hóa đơn đã được tạo."
-          } 
-        });
-      }
-    }
-    
-  } catch (err) {
-    console.error("Lỗi khi đặt hàng:", err);
-    
-    if (err.response?.status === 400) {
-      const errorMessage = err.response?.data?.message || "Có lỗi xảy ra khi đặt hàng";
-      
-      if (errorMessage.includes("Voucher không hợp lệ")) {
-        alert(errorMessage + "\nVui lòng kiểm tra lại voucher hoặc đặt hàng không dùng voucher.");
-        handleRemoveVoucher();
-      } else if (errorMessage.includes("khoảng cách")) {
-        alert("Lỗi khi tính khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
+        window.location.href = response.data.paymentUrl;
       } else {
-        alert(errorMessage);
+        console.error("Lỗi VNPay - Mã code khác 00:", response.data);
+        throw new Error(response.data.message || "Lỗi tạo thanh toán VNPay");
       }
-    } else {
-      alert(err.message || "Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!");
+    } catch (err) {
+      console.error("Lỗi khi tạo thanh toán VNPay:", err);
+      if (err.response) {
+        console.error("Status:", err.response.status);
+        console.error("Headers:", err.response.headers);
+        console.error("Data:", err.response.data);
+      } else {
+        console.error("Message:", err.message);
+      }
+      throw new Error("Không thể tạo thanh toán VNPay. Vui lòng thử lại!");
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
+  const handleDatHang = async () => {
+    if (!diaChi.trim()) {
+      alert("Vui lòng chọn hoặc nhập địa chỉ giao hàng");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      console.log("Đang kiểm tra khoảng cách giao hàng...");
+      const distanceRes = await axios.get("/khoang-cach/dia-chi", {
+        params: { diaChi: diaChi },
+      });
+
+      if (!distanceRes.data || distanceRes.data.khoangCach_km === undefined) {
+        alert("Không thể xác định khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
+        setLoading(false);
+        return;
+      }
+
+      const khoangCach = distanceRes.data.khoangCach_km;
+      console.log(`Khoảng cách: ${khoangCach} km`);
+
+      if (khoangCach > 20) {
+        alert(
+          `Rất tiếc, địa chỉ của quý khách (cách ${khoangCach.toFixed(1)} km) nằm ngoài phạm vi giao hàng của chúng tôi.\n\n` +
+          "Để đảm bảo chất lượng và độ tươi ngon tốt nhất của thực phẩm, chúng tôi chỉ phục vụ trong bán kính 20km.\n\n" +
+          "Xin quý khách vui lòng thông cảm và cân nhắc đặt hàng tại địa chỉ gần hơn!"
+        );
+        setLoading(false);
+        return;
+      }
+
+      const phuongThucText = phuongThucThanhToan === "COD" ? "Tiền mặt khi nhận hàng" : "Ví điện tử VNPay";
+      
+      const confirmOrder = window.confirm(
+        `Xác nhận đặt hàng:\n\n` +
+        `• Địa chỉ giao hàng: ${diaChi}\n` +
+        `• Khoảng cách: ${khoangCach.toFixed(1)} km\n` +
+        `• Thời gian giao hàng dự kiến: ${Math.ceil(khoangCach * 2 + 20)} phút\n` +
+        `• Phương thức thanh toán: ${phuongThucText}\n` +
+        `${ghiChu.trim() ? `• Ghi chú: ${ghiChu}\n` : ''}` +
+        `${voucherData ? `• Voucher: ${voucherData.maVoucher} (-${giamGia.toLocaleString()}₫)\n` : ''}` +
+        `• Tổng tiền: ${tongTienCuoi.toLocaleString()}₫\n\n` +
+        `Bạn có muốn tiếp tục đặt hàng không?`
+      );
+
+      if (!confirmOrder) {
+        setLoading(false);
+        return;
+      }
+
+      if (phuongThucThanhToan === "VNPAY") {
+       
+        await handleVNPayPayment(khoangCach);
+      } else {
+      
+        const donHangData = taoDuLieuDonHang(khoangCach);
+
+        console.log("Dữ liệu đặt hàng COD:", donHangData);
+        
+        const response = await axios.post('/don-hang/dat-hang', donHangData);
+        
+        if (response.data) {
+          const donHangId = response.data.id;
+          
+        
+          try {
+            await axios.delete(`/gio-hang/${nguoiDungId}/clear`);
+          } catch (clearError) {
+            console.error("Lỗi khi xóa giỏ hàng:", clearError);
+          }
+       
+          try {
+            console.log("Tạo hóa đơn COD cho đơn hàng:", donHangId);
+            await axios.post(`/hoa-don/tao-tu-don-hang/${donHangId}`);
+            console.log("Tạo hóa đơn COD thành công");
+          } catch (hoaDonError) {
+            console.error("Lỗi khi tạo hóa đơn COD:", hoaDonError);
+          }
+          
+          alert("Đặt hàng thành công! Hóa đơn đã được tạo. Bạn sẽ thanh toán tiền mặt khi nhận hàng.");
+          navigate('/', { 
+            state: { 
+              donHangId: donHangId,
+              tongTien: tongTienCuoi,
+              phuongThucThanhToan: "COD",
+              message: "Đặt hàng thành công! Hóa đơn đã được tạo."
+            } 
+          });
+        }
+      }
+      
+    } catch (err) {
+      console.error("Lỗi khi đặt hàng:", err);
+      
+      if (err.response?.status === 400) {
+        const errorMessage = err.response?.data?.message || "Có lỗi xảy ra khi đặt hàng";
+        
+        if (errorMessage.includes("Voucher không hợp lệ")) {
+          alert(errorMessage + "\nVui lòng kiểm tra lại voucher hoặc đặt hàng không dùng voucher.");
+          handleRemoveVoucher();
+        } else if (errorMessage.includes("khoảng cách")) {
+          alert("Lỗi khi tính khoảng cách giao hàng. Vui lòng kiểm tra lại địa chỉ.");
+        } else {
+          alert(errorMessage);
+        }
+      } else {
+        alert(err.message || "Có lỗi xảy ra khi đặt hàng. Vui lòng thử lại!");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="thanh-toan-container">
       <h2 className="page-title">🧾 Xác nhận thanh toán</h2>
 
-      {/* Product List Section */}
+    
       <div className="section">
         <h3 className="section-title">Sản phẩm đã chọn</h3>
         <div className="product-list">
@@ -388,7 +402,7 @@ const ThanhToan = () => {
         </div>
       </div>
 
-      {/* Address Section */}
+  
       <div className="section">
         <h3 className="section-title">Địa chỉ nhận hàng</h3>
         <div className="address-section">
@@ -432,7 +446,7 @@ const ThanhToan = () => {
         </div>
       </div>
 
-      {/* Payment Method Section */}
+
       <div className="section">
         <h3 className="section-title">💳 Phương thức thanh toán</h3>
         <div className="payment-method-section">
@@ -478,7 +492,7 @@ const ThanhToan = () => {
             </label>
           </div>
 
-          {/* VNPay Bank Selection */}
+      
           {phuongThucThanhToan === "VNPAY" && (
             <div className="vnpay-options">
               <div className="bank-selection">
@@ -509,7 +523,7 @@ const ThanhToan = () => {
         </div>
       </div>
 
-      {/* Note Section */}
+
       <div className="section">
         <h3 className="section-title">📝 Ghi chú đơn hàng</h3>
         <div className="note-section">
@@ -544,7 +558,7 @@ const ThanhToan = () => {
         </div>
       </div>
 
-      {/* Voucher Section */}
+    
       <div className="section">
         <h3 className="section-title">🎫 Mã giảm giá</h3>
         <div className="voucher-section">
@@ -592,7 +606,7 @@ const ThanhToan = () => {
         </div>
       </div>
 
-      {/* Total and Order Section */}
+    
       <div className="section">
         <div className="total-section">
           <div className="total-row">

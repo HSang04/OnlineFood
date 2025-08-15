@@ -37,18 +37,10 @@ public class HoaDonService {
     @Transactional
     public HoaDon taoHoaDonTuDonHang(Long donHangId, String phuongThucThanhToan, String maGiaoDich) {
         try {
-            System.out.println("=== Bắt đầu tạo hóa đơn ===");
-            System.out.println("Đơn hàng ID: " + donHangId);
-            System.out.println("Phương thức thanh toán: " + phuongThucThanhToan);
-            System.out.println("Mã giao dịch: " + maGiaoDich);
-            
-            // Lấy thông tin đơn hàng
+
             DonHang donHang = donHangRepository.findById(donHangId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng với ID: " + donHangId));
-            
-            System.out.println("Tìm thấy đơn hàng - Tổng tiền: " + donHang.getTongTien());
-            
-            // Kiểm tra xem đơn hàng đã có hóa đơn chưa
+                  
             Optional<HoaDon> existingHoaDon = hoaDonRepository.findByDonHangId(donHangId);
             if (existingHoaDon.isPresent()) {
                 System.out.println("Đơn hàng đã có hóa đơn ID: " + existingHoaDon.get().getId());
@@ -60,11 +52,8 @@ public class HoaDonService {
             if (nguoiDung == null) {
                 throw new RuntimeException("Không tìm thấy người dùng cho đơn hàng");
             }
-            
-            System.out.println("Người dùng: " + nguoiDung.getHoTen());
-            System.out.println("SĐT: " + nguoiDung.getSoDienThoai());
-            
-            // Tạo hóa đơn mới
+
+     
             HoaDon hoaDon = new HoaDon();
             hoaDon.setDonHang(donHang);
             
@@ -83,23 +72,16 @@ public class HoaDonService {
             hoaDon.setPhuongThuc(phuongThucThanhToan);
             hoaDon.setThoiGianThanhToan(new Date());
             
-            // Trạng thái tùy theo phương thức thanh toán
             if ("COD".equals(phuongThucThanhToan)) {
-                hoaDon.setTrangThai("CHUA_THANH_TOAN"); // COD chưa thanh toán
+                hoaDon.setTrangThai("CHUA_THANH_TOAN");
             } else {
-                hoaDon.setTrangThai("DA_THANH_TOAN"); // VNPay đã thanh toán
+                hoaDon.setTrangThai("DA_THANH_TOAN");
             }
             
             hoaDon.setMaGD(maGiaoDich);
             
-            // Lưu hóa đơn
-            HoaDon savedHoaDon = hoaDonRepository.save(hoaDon);
             
-            System.out.println("=== Tạo hóa đơn thành công ===");
-            System.out.println("ID hóa đơn: " + savedHoaDon.getId());
-            System.out.println("Tổng tiền: " + savedHoaDon.getTongTien());
-            System.out.println("Trạng thái: " + savedHoaDon.getTrangThai());
-            System.out.println("============================");
+            HoaDon savedHoaDon = hoaDonRepository.save(hoaDon);
             
             return savedHoaDon;
             
@@ -137,7 +119,7 @@ public class HoaDonService {
             hd.setTrangThai(newHoaDon.getTrangThai());
             hd.setMaGD(newHoaDon.getMaGD());
             
-            // ✅ FIX: Cập nhật tổng tiền đúng cách
+           
             if (newHoaDon.getTongTien() != null && newHoaDon.getTongTien() > 0) {
                 hd.setTongTien(newHoaDon.getTongTien());
             }
@@ -146,24 +128,35 @@ public class HoaDonService {
         }).orElse(null);
     }
     
-    @Transactional
-    public void capNhatThanhToanCOD(Long hoaDonId) {
+    
+      @Transactional
+    public void capNhatThanhToanKhiHoanThanh(Long donHangId) {
         try {
-            HoaDon hoaDon = hoaDonRepository.findById(hoaDonId)
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn với ID: " + hoaDonId));
+          
+            Optional<HoaDon> optionalHoaDon = hoaDonRepository.findByDonHangId(donHangId);
             
-            if ("COD".equals(hoaDon.getPhuongThuc()) && "CHUA_THANH_TOAN".equals(hoaDon.getTrangThai())) {
-                hoaDon.setTrangThai("DA_THANH_TOAN");
-                hoaDon.setThoiGianThanhToan(new Date());
-                hoaDonRepository.save(hoaDon);
+            if (optionalHoaDon.isPresent()) {
+                HoaDon hoaDon = optionalHoaDon.get();
                 
-                System.out.println("Đã cập nhật trạng thái thanh toán COD cho hóa đơn: " + hoaDonId);
+              
+                if ("CHUA_THANH_TOAN".equals(hoaDon.getTrangThai())) {
+                    hoaDon.setTrangThai("DA_THANH_TOAN");
+                    hoaDon.setThoiGianThanhToan(new Date());
+                    hoaDonRepository.save(hoaDon);
+                    
+                    System.out.println("Đã cập nhật trạng thái hóa đơn thành DA_THANH_TOAN cho đơn hàng: " + donHangId);
+                } else {
+                    System.out.println("Hóa đơn đã được thanh toán trước đó cho đơn hàng: " + donHangId);
+                }
             } else {
-                System.out.println("Hóa đơn không phải COD hoặc đã thanh toán: " + hoaDonId);
+              
+                System.out.println("Chưa có hóa đơn cho đơn hàng " + donHangId + ", tạo hóa đơn COD và đánh dấu đã thanh toán");
             }
+            
         } catch (Exception e) {
-            System.err.println("Lỗi khi cập nhật COD: " + e.getMessage());
-            throw new RuntimeException("Không thể cập nhật trạng thái thanh toán: " + e.getMessage());
+            System.err.println("Lỗi khi cập nhật trạng thái hóa đơn khi hoàn thành: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Không thể cập nhật trạng thái hóa đơn: " + e.getMessage());
         }
     }
     

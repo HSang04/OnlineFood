@@ -99,11 +99,11 @@ const HoaDon = () => {
   return (
     <div className="hoa-don-container">
       <div className="hoa-don-content">
-        {/* Header */}
+  
         <div className="invoice-header">
           <h1 className="invoice-title">HÓA ĐƠN ĐIỆN TỬ</h1>
-          <p>🍜 Online Food - Dịch vụ đặt đồ ăn trực tuyến</p>
-          <p>📍 123 Đường ABC, Quận XYZ, TP.HCM | 📞 1900-xxxx</p>
+          <p>OU Food</p>
+          <p> 40E Ngô Đức Kế, Phường Sài Gòn, TP.HCM | 📞 1900 2403</p>
         </div>
 
         <div className="invoice-info">
@@ -117,28 +117,28 @@ const HoaDon = () => {
           </div>
         </div>
 
-        {/* Thông tin khách hàng */}
+      
         <div className="invoice-details">
           <h4>Thông tin khách hàng</h4>
           <div className="detail-row">
-            <span>👤 Họ tên:</span>
+            <span> Họ tên:</span>
             <span>{hoaDon.hoTen}</span>
           </div>
           <div className="detail-row">
-            <span>📱 Số điện thoại:</span>
+            <span> Số điện thoại:</span>
             <span>{hoaDon.soDienThoai}</span>
           </div>
           <div className="detail-row">
-            <span>📍 Địa chỉ giao hàng:</span>
+            <span> Địa chỉ giao hàng:</span>
             <span>{hoaDon.diaChi}</span>
           </div>
         </div>
 
-        {/* Thông tin đơn hàng */}
+       
         <div className="invoice-details">
           <h4>Thông tin đơn hàng</h4>
           <div className="detail-row">
-            <span>🔢 Mã đơn hàng:</span>
+            <span> Mã đơn hàng:</span>
             <span>#{hoaDon.donHang.id}</span>
           </div>
           <div className="detail-row">
@@ -147,7 +147,7 @@ const HoaDon = () => {
           </div>
         </div>
 
-        {/* Chi tiết đơn hàng */}
+     
         <div className="invoice-details">
           <h4>Chi tiết đơn hàng</h4>
           <table className="order-table">
@@ -174,7 +174,7 @@ const HoaDon = () => {
           </table>
         </div>
 
-        {/* Tổng tiền */}
+       
         <div className="total-section">
           <div className="detail-row">
             <span>Tạm tính:</span>
@@ -182,40 +182,40 @@ const HoaDon = () => {
           </div>
           {giamGia > 0 && (
             <div className="detail-row">
-              <span>🎉 Giảm giá:</span>
+              <span>Giảm giá:</span>
               <span style={{ color: '#e74c3c' }}>-{giamGia.toLocaleString()}₫</span>
             </div>
           )}
           <div className="detail-row total-amount">
-            <span>💰 Tổng tiền thanh toán:</span>
+            <span> Tổng tiền thanh toán:</span>
             <span>{hoaDon.tongTien.toLocaleString()}₫</span>
           </div>
           <div className="detail-row">
-            <span>📊 Trạng thái thanh toán:</span>
+            <span>Trạng thái thanh toán:</span>
             <span>{getTrangThaiThanhToan(hoaDon.trangThai)}</span>
           </div>
           <div className="detail-row">
-            <span>⏰ Thời gian thanh toán:</span>
+            <span> Thời gian thanh toán:</span>
             <span>{formatDate(hoaDon.thoiGianThanhToan)}</span>
           </div>
         </div>
 
-        {/* Footer */}
+     
         <div className="invoice-footer">
-          <p><strong>🙏 Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</strong></p>
+          <p><strong>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</strong></p>
           <p>Hóa đơn được tạo tự động bởi hệ thống - {new Date().toLocaleString('vi-VN')}</p>
         </div>
 
-        {/* Action buttons - sẽ ẩn khi in */}
+      
         <div className="action-buttons no-print">
           <button onClick={handlePrint} className="print-button">
-            📄 In hóa đơn
+             In hóa đơn
           </button>
-          <button onClick={() => navigate('/don-hang-cua-toi')} className="secondary-button">
-            📋 Xem đơn hàng
+          <button onClick={() => navigate('/lich-su-giao-dich')} className="secondary-button">
+             Xem đơn hàng
           </button>
           <button onClick={() => navigate('/')} className="primary-button">
-            🏠 Về trang chủ
+             Về trang chủ
           </button>
         </div>
       </div>

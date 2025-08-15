@@ -1,8 +1,10 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "../../../services/axiosInstance";
 import "./QuanLyDonHang.css";
 
 const QuanLyDonHang = () => {
+  const navigate = useNavigate();
   const [donHangs, setDonHangs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -12,10 +14,15 @@ const QuanLyDonHang = () => {
   const [showModal, setShowModal] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [loadingInvoice, setLoadingInvoice] = useState({});
+  
+
+  const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState(null);
+  const intervalRef = useRef(null);
 
   const jwt = localStorage.getItem("jwt");
 
- 
   const ORDER_STATUS = {
     DANG_XU_LY: "DANG_XU_LY",
     DANG_LAM: "DANG_LAM", 
@@ -61,7 +68,6 @@ const QuanLyDonHang = () => {
       });
       
       if (response.data) {
-        
         const sortedOrders = response.data.sort((a, b) => 
           new Date(b.ngayTao) - new Date(a.ngayTao)
         );
@@ -75,7 +81,77 @@ const QuanLyDonHang = () => {
     }
   }, [jwt]);
 
+  const silentRefresh = useCallback(async () => {
+    try {
+      setIsAutoRefreshing(true);
+      const response = await axios.get("/don-hang", {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+        },
+      });
+      
+      if (response.data) {
+        const sortedOrders = response.data.sort((a, b) => 
+          new Date(b.ngayTao) - new Date(a.ngayTao)
+        );
+        
+   
+        setDonHangs(prevOrders => {
+          const hasChanges = JSON.stringify(prevOrders) !== JSON.stringify(sortedOrders);
+          return hasChanges ? sortedOrders : prevOrders;
+        });
+        
+        setLastRefreshTime(new Date());
+      }
+    } catch (err) {
+      console.error("Lỗi khi refresh âm thầm:", err);
+    
+    } finally {
+      setIsAutoRefreshing(false);
+    }
+  }, [jwt]);
+
  
+  useEffect(() => {
+    if (jwt && donHangs.length > 0) {
+      //  refresh sau 30s
+      intervalRef.current = setInterval(() => {
+        silentRefresh();
+      }, 30000);
+
+    
+      return () => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+        }
+      };
+    }
+  }, [jwt, silentRefresh, donHangs.length]);
+
+
+  useEffect(() => {
+    if (jwt) {
+      fetchDonHangs();
+    }
+  }, [fetchDonHangs, jwt]);
+
+
+  useEffect(() => {
+    if (showModal && intervalRef.current) {
+      clearInterval(intervalRef.current);
+    } else if (!showModal && jwt && donHangs.length > 0) {
+      intervalRef.current = setInterval(() => {
+        silentRefresh();
+      }, 30000);
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [showModal, jwt, silentRefresh, donHangs.length]);
+
   const fetchOrderDetails = async (orderId) => {
     try {
       setLoadingDetails(true);
@@ -87,17 +163,13 @@ const QuanLyDonHang = () => {
         },
       });
       
-      // console.log("Chi tiết đơn hàng nhận được:", response.data);
-      
       if (response.data && Array.isArray(response.data)) {
-        
         const chiTietList = response.data;
         const donHangInfo = chiTietList.length > 0 ? chiTietList[0].donHang : null;
         
         if (!donHangInfo) {
           throw new Error("Không tìm thấy thông tin đơn hàng");
         }
-        
         
         const processedChiTiet = chiTietList.map(item => ({
           ...item,
@@ -106,7 +178,6 @@ const QuanLyDonHang = () => {
           thanhTien: (item.donGia || item.gia || 0) * (item.soLuong || 0)
         }));
         
-     
         const completeOrder = {
           ...donHangInfo,
           chiTietDonHang: processedChiTiet,
@@ -119,7 +190,6 @@ const QuanLyDonHang = () => {
         setSelectedOrder(completeOrder);
       } else {
         console.warn("API trả về dữ liệu không đúng định dạng");
-      
         const orderFromList = donHangs.find(order => order.id === orderId);
         if (orderFromList) {
           setSelectedOrder(orderFromList);
@@ -130,8 +200,6 @@ const QuanLyDonHang = () => {
       }
     } catch (err) {
       console.error("Lỗi khi lấy chi tiết đơn hàng:", err);
-      
-    
       const orderFromList = donHangs.find(order => order.id === orderId);
       if (orderFromList) {
         setSelectedOrder(orderFromList);
@@ -145,13 +213,36 @@ const QuanLyDonHang = () => {
     }
   };
 
-  useEffect(() => {
-    if (jwt) {
-      fetchDonHangs();
-    }
-  }, [fetchDonHangs, jwt]);
 
-  
+  const handleViewInvoice = async (orderId) => {
+    try {
+      setLoadingInvoice(prev => ({ ...prev, [orderId]: true }));
+      
+ 
+      const response = await axios.get(`/hoa-don/don-hang/${orderId}`, {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+        },
+      });
+      
+      if (response.data) {
+
+        navigate(`/hoa-don/${orderId}`);
+      } else {
+        alert("Hóa đơn chưa được tạo cho đơn hàng này!");
+      }
+    } catch (err) {
+      console.error("Lỗi khi kiểm tra hóa đơn:", err);
+      if (err.response?.status === 404) {
+        alert("Hóa đơn chưa được tạo cho đơn hàng này!");
+      } else {
+        alert("Không thể truy cập hóa đơn. Vui lòng thử lại!");
+      }
+    } finally {
+      setLoadingInvoice(prev => ({ ...prev, [orderId]: false }));
+    }
+  };
+
   const normalizeStatus = (status) => {
     const statusMap = {
       "Đang xử lý": "dang_xu_ly",
@@ -163,7 +254,6 @@ const QuanLyDonHang = () => {
     return statusMap[status] || status.toLowerCase().replace(/\s+/g, '_');
   };
 
- 
   const filteredOrders = donHangs.filter(order => {
     const normalizedStatus = normalizeStatus(order.trangThai);
     const matchesFilter = filter === "all" || normalizedStatus === filter;
@@ -176,59 +266,76 @@ const QuanLyDonHang = () => {
     return matchesFilter && matchesSearch;
   });
 
-  
   const getOrderCountByStatus = (status) => {
     if (status === "all") return donHangs.length;
     return donHangs.filter(order => normalizeStatus(order.trangThai) === status).length;
   };
 
-
   const updateOrderStatus = async (orderId, newStatus) => {
-    try {
-      setUpdating(true);
-      
-      
-      const response = await axios.patch(`/don-hang/trang-thai/${orderId}`, {
-        trangThai: newStatus
-      }, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-          'Content-Type': 'application/json'
-        },
-      });
+  try {
+    setUpdating(true);
+    
+    const response = await axios.patch(`/don-hang/trang-thai/${orderId}`, {
+      trangThai: newStatus
+    }, {
+      headers: {
+        Authorization: `Bearer ${jwt}`,
+        'Content-Type': 'application/json'
+      },
+    });
 
-      if (response.data) {
+    if (response.data) {
+    
+      if (newStatus === "HOAN_THANH") {
+        try {
+          await axios.put(`/hoa-don/cap-nhat-hoan-thanh/${orderId}`, {}, {
+            headers: {
+              Authorization: `Bearer ${jwt}`,
+            },
+          });
+          console.log("Đã cập nhật trạng thái hóa đơn thành DA_THANH_TOAN");
+        } catch (invoiceError) {
+          console.error("Lỗi khi cập nhật hóa đơn:", invoiceError);
         
-        setDonHangs(prev => prev.map(order => 
-          order.id === orderId 
-            ? { ...order, trangThai: newStatus }
-            : order
-        ));
-        
-     
-        if (selectedOrder && selectedOrder.id === orderId) {
-          setSelectedOrder(prev => ({ ...prev, trangThai: newStatus }));
         }
-        
-        alert(`Cập nhật trạng thái đơn hàng #${orderId} thành công!`);
       }
-    } catch (err) {
-      console.error("Lỗi khi cập nhật trạng thái:", err);
-      
-     
-      if (err.response?.status === 400) {
-        alert("Trạng thái không hợp lệ. Vui lòng thử lại!");
-      } else if (err.response?.status === 404) {
-        alert("Không tìm thấy đơn hàng. Vui lòng làm mới trang!");
-      } else {
-        alert("Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại!");
-      }
-    } finally {
-      setUpdating(false);
-    }
-  };
 
- 
+      setDonHangs(prev => prev.map(order => 
+        order.id === orderId 
+          ? { ...order, trangThai: newStatus }
+          : order
+      ));
+      
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder(prev => ({ ...prev, trangThai: newStatus }));
+      }
+      
+      const statusMessage = newStatus === "HOAN_THANH" 
+        ? "Đơn hàng đã hoàn thành và hóa đơn đã được cập nhật trạng thái thanh toán!"
+        : `Cập nhật trạng thái đơn hàng #${orderId} thành công!`;
+      
+      alert(statusMessage);
+      
+   
+      setTimeout(() => {
+        silentRefresh();
+      }, 1000);
+    }
+  } catch (err) {
+    console.error("Lỗi khi cập nhật trạng thái:", err);
+    
+    if (err.response?.status === 400) {
+      alert("Trạng thái không hợp lệ. Vui lòng thử lại!");
+    } else if (err.response?.status === 404) {
+      alert("Không tìm thấy đơn hàng. Vui lòng làm mới trang!");
+    } else {
+      alert("Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại!");
+    }
+  } finally {
+    setUpdating(false);
+  }
+};
+
   const formatDateTime = (dateTime) => {
     const date = new Date(dateTime);
     return date.toLocaleString('vi-VN', {
@@ -240,7 +347,6 @@ const QuanLyDonHang = () => {
     });
   };
 
- 
   const getTimeElapsed = (orderDate) => {
     const now = new Date();
     const created = new Date(orderDate);
@@ -254,12 +360,10 @@ const QuanLyDonHang = () => {
     return `${diffMins} phút trước`;
   };
 
- 
   const openOrderModal = async (order) => {
     setShowModal(true);
     await fetchOrderDetails(order.id);
   };
-
 
   const closeModal = () => {
     setShowModal(false);
@@ -281,7 +385,7 @@ const QuanLyDonHang = () => {
     return (
       <div className="quan-ly-don-hang-container">
         <div className="error-container">
-          <h2> Có lỗi xảy ra</h2>
+          <h2>⚠️ Có lỗi xảy ra</h2>
           <p>{error}</p>
           <button onClick={fetchDonHangs} className="btn-retry">
             Thử lại
@@ -294,7 +398,32 @@ const QuanLyDonHang = () => {
   return (
     <div className="quan-ly-don-hang-container">
       <header className="page-header">
-        <h1 className="page-title">📋 Quản lý đơn hàng</h1>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h1 className="page-title">📋 Quản lý đơn hàng</h1>
+          
+          {/* Indicator trạng thái auto refresh */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {isAutoRefreshing && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{
+                  width: '8px',
+                  height: '8px',
+                  backgroundColor: '#4caf50',
+                  borderRadius: '50%',
+                  animation: 'pulse 1.5s infinite'
+                }}></div>
+                <span style={{ fontSize: '12px', color: '#666' }}>Đang cập nhật...</span>
+              </div>
+            )}
+            
+            {lastRefreshTime && (
+              <span style={{ fontSize: '12px', color: '#999' }}>
+                Cập nhật: {lastRefreshTime.toLocaleTimeString('vi-VN')}
+              </span>
+            )}
+          </div>
+        </div>
+        
         <div className="stats-row">
           <div className="stat-card">
             <span className="stat-number">{donHangs.length}</span>
@@ -311,6 +440,12 @@ const QuanLyDonHang = () => {
               {getOrderCountByStatus("dang_lam")}
             </span>
             <span className="stat-label">Đang làm</span>
+          </div>
+          <div className="stat-card delivering">
+            <span className="stat-number">
+              {getOrderCountByStatus("dang_giao")}
+            </span>
+            <span className="stat-label">Đang giao</span>
           </div>
           <div className="stat-card completed">
             <span className="stat-number">
@@ -330,7 +465,7 @@ const QuanLyDonHang = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
           />
-          <span className="search-icon"></span>
+          <span className="search-icon">🔍</span>
         </div>
 
         <div className="filter-tabs">
@@ -353,10 +488,22 @@ const QuanLyDonHang = () => {
             Đang làm ({getOrderCountByStatus("dang_lam")})
           </button>
           <button 
+            className={`filter-tab ${filter === "dang_giao" ? "active" : ""}`}
+            onClick={() => setFilter("dang_giao")}
+          >
+            Đang giao ({getOrderCountByStatus("dang_giao")})
+          </button>
+          <button 
             className={`filter-tab ${filter === "hoan_thanh" ? "active" : ""}`}
             onClick={() => setFilter("hoan_thanh")}
           >
             Hoàn thành ({getOrderCountByStatus("hoan_thanh")})
+          </button>
+          <button 
+            className={`filter-tab ${filter === "da_huy" ? "active" : ""}`}
+            onClick={() => setFilter("da_huy")}
+          >
+            Đã hủy ({getOrderCountByStatus("da_huy")})
           </button>
         </div>
       </div>
@@ -407,9 +554,23 @@ const QuanLyDonHang = () => {
                   </span>
                 </div>
 
+                <div className="order-date">
+                  <span className="date-icon">📅</span>
+                  <span className="date-text">
+                    {formatDateTime(order.ngayTao)}
+                  </span>
+                </div>
+
+                {order.ghiChu && (
+                  <div className="order-note">
+                    <span className="note-icon">📝</span>
+                    <span className="note-text">{order.ghiChu}</span>
+                  </div>
+                )}
+
                 <div className="order-summary">
                   <div className="items-count">
-                     Thành tiền:
+                    💰 Thành tiền:
                   </div>
                   <div className="order-total">
                     {order.tongTien?.toLocaleString() || "0"}₫
@@ -422,6 +583,16 @@ const QuanLyDonHang = () => {
                     onClick={() => openOrderModal(order)}
                   >
                     Chi tiết
+                  </button>
+
+                  {/* Nút xem/in hóa đơn - hiển thị ngay từ khi đang xử lý */}
+                  <button 
+                    className="btn-invoice"
+                    onClick={() => handleViewInvoice(order.id)}
+                    disabled={loadingInvoice[order.id]}
+                    title="Xem và in hóa đơn"
+                  >
+                    {loadingInvoice[order.id] ? "..." : "🧾 Hóa đơn"}
                   </button>
                   
                   {order.trangThai === "DANG_XU_LY" && (
@@ -460,7 +631,6 @@ const QuanLyDonHang = () => {
         )}
       </div>
 
-     
       {showModal && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -496,15 +666,24 @@ const QuanLyDonHang = () => {
                   </div>
 
                   <div className="detail-section">
-                    <h3>Thông tin giao hàng</h3>
+                    <h3>Thông tin đơn hàng</h3>
                     <div className="detail-grid">
                       <div className="detail-item">
-                        <span className="label">Địa chỉ nhận hàng:</span>
-                        <span>{selectedOrder.diaChiGiaoHang || selectedOrder.nguoiDung?.diaChi || "N/A"}</span>
+                        <span className="label">Trạng thái:</span>
+                        <span
+                          className="status-badge"
+                          style={{ backgroundColor: STATUS_COLORS[selectedOrder.trangThai] }}
+                        >
+                          {STATUS_LABELS[selectedOrder.trangThai]}
+                        </span>
                       </div>
                       <div className="detail-item">
                         <span className="label">Thời gian đặt:</span>
                         <span>{formatDateTime(selectedOrder.ngayTao)}</span>
+                      </div>
+                      <div className="detail-item">
+                        <span className="label">Địa chỉ giao hàng:</span>
+                        <span>{selectedOrder.diaChiGiaoHang || selectedOrder.nguoiDung?.diaChi || "N/A"}</span>
                       </div>
                       <div className="detail-item">
                         <span className="label">Ghi chú:</span>
@@ -521,20 +700,24 @@ const QuanLyDonHang = () => {
                           <div key={index} className="item-row">
                             <div className="item-info">
                               {item.monAn?.hinhAnhMonAns?.length > 0 ? (
-                                    <img
-                                        src={item.monAn.hinhAnhMonAns[0].duongDan}
-                                        alt={item.monAn?.tenMonAn || "Món ăn"}
-                                        className="item-image"
-                                    />
-                                    ) : (
-                                    <div className="item-no-image">Chưa có ảnh</div>
-                                    )}
+                                <img
+                                  src={item.monAn.hinhAnhMonAns[0].duongDan}
+                                  alt={item.monAn?.tenMonAn || "Món ăn"}
+                                  className="item-image"
+                                />
+                              ) : (
+                                <div className="item-no-image">🍽️</div>
+                              )}
                               <div className="item-details">
                                 <div className="item-name">{item.monAn?.tenMonAn || `Món ăn ID: ${item.monAnId}`}</div>
                                 <div className="item-price">
-                                  {(item.donGia)?.toLocaleString() || "0"}₫ x {item.soLuong || 0}
+                                  {(item.gia || item.donGia)?.toLocaleString() || "0"}₫ x {item.soLuong || 0}
                                 </div>
-                                
+                                {item.monAn?.khuyenMai && (
+                                  <div className="item-discount">
+                                    Khuyến mãi: -{item.monAn.khuyenMai.giaGiam?.toLocaleString()}₫
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <div className="item-total">
@@ -552,7 +735,7 @@ const QuanLyDonHang = () => {
                   </div>
 
                   <div className="detail-section">
-                    <h3>Tổng kết</h3>
+                    <h3>Tổng kết thanh toán</h3>
                     <div className="summary-rows">
                       <div className="summary-row">
                         <span>Tạm tính:</span>
@@ -578,6 +761,16 @@ const QuanLyDonHang = () => {
                   </div>
 
                   <div className="modal-actions">
+                    {/* Nút xem/in hóa đơn trong modal */}
+                    <button 
+                      className="btn-modal-invoice"
+                      onClick={() => handleViewInvoice(selectedOrder.id)}
+                      disabled={loadingInvoice[selectedOrder.id]}
+                      title="Xem và in hóa đơn"
+                    >
+                      {loadingInvoice[selectedOrder.id] ? "Đang tải..." : "🧾 Xem/In hóa đơn"}
+                    </button>
+
                     {selectedOrder.trangThai === "DANG_XU_LY" && (
                       <button 
                         className="btn-modal-accept"
@@ -618,6 +811,7 @@ const QuanLyDonHang = () => {
           </div>
         </div>
       )}
+   
     </div>
   );
 };
