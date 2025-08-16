@@ -11,15 +11,28 @@ const ChiTietMonAn = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [dsMonAnLienQuan, setDsMonAnLienQuan] = useState([]);
+  
+  const [danhGiaList, setDanhGiaList] = useState([]);
+  const [thongKeDanhGia, setThongKeDanhGia] = useState(null);
+  const [danhGiaCuaToi, setDanhGiaCuaToi] = useState(null);
+  const [loadingDanhGia, setLoadingDanhGia] = useState(false);
+  const [sapXepDanhGia, setSapXepDanhGia] = useState("moi_nhat");
+  
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    soSao: 5,
+    noiDung: ""
+  });
+
+  const idNguoiDung = localStorage.getItem("idNguoiDung");
+  const isLoggedIn = !!idNguoiDung;
 
   const fetchChiTietMonAn = useCallback(async () => {
     setLoading(true);
     try {
-    
       const res = await axios.get(`/mon-an/${id}/dto`);
       setMonAn(res.data);
       
-     
       if (res.data.danhMuc?.id) {
         const relatedRes = await axios.get(`/mon-an/category/${res.data.danhMuc.id}`);
         setDsMonAnLienQuan(relatedRes.data.filter(item => item.id !== parseInt(id)).slice(0, 4));
@@ -31,9 +44,48 @@ const ChiTietMonAn = () => {
     }
   }, [id]);
 
+  const fetchDanhGia = useCallback(async () => {
+    setLoadingDanhGia(true);
+    try {
+      
+      const danhGiaRes = await axios.get(`/danh-gia-mon-an/mon-an/${id}?sapXep=${sapXepDanhGia}`);
+      setDanhGiaList(danhGiaRes.data);
+
+    
+      const thongKeRes = await axios.get(`/danh-gia-mon-an/mon-an/${id}/thong-ke`);
+      setThongKeDanhGia(thongKeRes.data);
+
+   
+      if (isLoggedIn) {
+        try {
+          const myReviewRes = await axios.get(`/danh-gia-mon-an/mon-an/${id}/nguoi-dung/${idNguoiDung}`);
+          setDanhGiaCuaToi(myReviewRes.data);
+          setReviewForm({
+            soSao: myReviewRes.data.soSao,
+            noiDung: myReviewRes.data.noiDung || ""
+          });
+        } catch (error) {
+        
+          setDanhGiaCuaToi(null);
+          setReviewForm({ soSao: 5, noiDung: "" });
+        }
+      }
+    } catch (err) {
+      console.error("Lỗi lấy đánh giá:", err);
+    } finally {
+      setLoadingDanhGia(false);
+    }
+  }, [id, sapXepDanhGia, idNguoiDung, isLoggedIn]);
+
   useEffect(() => {
     fetchChiTietMonAn();
   }, [fetchChiTietMonAn]);
+
+  useEffect(() => {
+    if (monAn) {
+      fetchDanhGia();
+    }
+  }, [monAn, fetchDanhGia]);
 
   const handleQuantityChange = (type) => {
     if (type === 'increase') {
@@ -44,9 +96,7 @@ const ChiTietMonAn = () => {
   };
 
   const handleAddToCart = async () => {
-    const idNguoiDung = localStorage.getItem("idNguoiDung");
-
-    if (!idNguoiDung) {
+    if (!isLoggedIn) {
       alert("Bạn cần đăng nhập trước khi thêm vào giỏ hàng.");
       return;
     }
@@ -66,17 +116,13 @@ const ChiTietMonAn = () => {
     }
   };
 
-
   const handleBuyNow = async () => {
-    const idNguoiDung = localStorage.getItem("idNguoiDung");
-
-    if (!idNguoiDung) {
+    if (!isLoggedIn) {
       alert("Bạn cần đăng nhập trước khi đặt hàng.");
       return;
     }
 
     try {
-     
       await axios.post(`/gio-hang/${idNguoiDung}/add`, null, {
         params: {
           monAnId: monAn.id,
@@ -84,11 +130,55 @@ const ChiTietMonAn = () => {
         }
       });
 
-     
       navigate('/cart');
     } catch (error) {
       console.error("Lỗi đặt hàng:", error);
       alert("Đặt hàng thất bại.");
+    }
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    
+    if (!isLoggedIn) {
+      alert("Bạn cần đăng nhập để đánh giá món ăn.");
+      return;
+    }
+
+    if (!reviewForm.noiDung.trim()) {
+      alert("Vui lòng nhập nội dung đánh giá.");
+      return;
+    }
+
+    try {
+      await axios.post(`/danh-gia-mon-an/mon-an/${id}/nguoi-dung/${idNguoiDung}`, {
+        soSao: reviewForm.soSao,
+        noiDung: reviewForm.noiDung.trim()
+      });
+
+      alert(danhGiaCuaToi ? "Cập nhật đánh giá thành công!" : "Thêm đánh giá thành công!");
+      setShowReviewForm(false);
+      fetchDanhGia(); // Refresh danh sách đánh giá
+    } catch (error) {
+      console.error("Lỗi gửi đánh giá:", error);
+      alert("Gửi đánh giá thất bại.");
+    }
+  };
+
+  const handleDeleteReview = async () => {
+    if (!danhGiaCuaToi || !window.confirm("Bạn có chắc muốn xóa đánh giá này?")) {
+      return;
+    }
+
+    try {
+      await axios.delete(`/danh-gia-mon-an/${danhGiaCuaToi.id}`);
+      alert("Xóa đánh giá thành công!");
+      setDanhGiaCuaToi(null);
+      setReviewForm({ soSao: 5, noiDung: "" });
+      fetchDanhGia();
+    } catch (error) {
+      console.error("Lỗi xóa đánh giá:", error);
+      alert("Xóa đánh giá thất bại.");
     }
   };
 
@@ -99,10 +189,41 @@ const ChiTietMonAn = () => {
     }).format(price);
   };
 
-  
   const calculateTotalPrice = () => {
     const giaHienThi = monAn.coKhuyenMai ? monAn.giaKhuyenMai : monAn.gia;
     return giaHienThi * quantity;
+  };
+
+  const formatDateTime = (dateTime) => {
+    return new Date(dateTime).toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const renderStars = (rating, interactive = false, onStarClick = null) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span
+          key={i}
+          className={`star ${i <= rating ? 'filled' : ''} ${interactive ? 'interactive' : ''}`}
+          onClick={() => interactive && onStarClick && onStarClick(i)}
+          style={{
+            color: i <= rating ? '#ffc107' : '#e4e5e9',
+            cursor: interactive ? 'pointer' : 'default',
+            fontSize: interactive ? '1.5rem' : '1rem',
+            marginRight: '2px'
+          }}
+        >
+          ★
+        </span>
+      );
+    }
+    return stars;
   };
 
   if (loading) {
@@ -128,7 +249,7 @@ const ChiTietMonAn = () => {
 
   return (
     <div className="chi-tiet-container">
-   
+      
       <div className="breadcrumb">
         <span onClick={() => navigate('/menu')} className="breadcrumb-item">
           Menu
@@ -138,7 +259,7 @@ const ChiTietMonAn = () => {
       </div>
 
       <div className="chi-tiet-content">
-     
+      
         <div className="image-section">
           <div className="main-image">
             {monAn.hinhAnhMonAns && monAn.hinhAnhMonAns.length > 0 ? (
@@ -170,16 +291,28 @@ const ChiTietMonAn = () => {
           )}
         </div>
 
-    
+        
         <div className="info-section">
           <div className="dish-header">
             <h1 className="dish-title">{monAn.tenMonAn}</h1>
             <span className="category-tag">
               {monAn.danhMuc?.tenDanhMuc || "Khác"}
             </span>
+            
+         
+            {thongKeDanhGia && thongKeDanhGia.tongSoDanhGia > 0 && (
+              <div className="simple-rating-info">
+                <div className="rating-stars">
+                  {renderStars(Math.round(thongKeDanhGia.diemTrungBinh))}
+                </div>
+                <span className="rating-text">
+                  {thongKeDanhGia.diemTrungBinh}/5 ({thongKeDanhGia.tongSoDanhGia} đánh giá)
+                </span>
+              </div>
+            )}
           </div>
 
-      
+        
           <div className="price-section">
             {monAn.coKhuyenMai ? (
               <div className="price-with-promotion">
@@ -214,7 +347,7 @@ const ChiTietMonAn = () => {
             </p>
           </div>
 
-       
+         
           <div className="order-section">
             <div className="quantity-selector">
               <label>Số lượng:</label>
@@ -261,6 +394,208 @@ const ChiTietMonAn = () => {
       </div>
 
     
+      <div className="reviews-section">
+        <div className="reviews-header">
+          <h2 className="reviews-title">
+            Đánh giá món ăn
+            {thongKeDanhGia && (
+              <span className="reviews-count">({thongKeDanhGia.tongSoDanhGia} đánh giá)</span>
+            )}
+          </h2>
+        </div>
+
+       
+        {thongKeDanhGia && thongKeDanhGia.tongSoDanhGia > 0 && (
+          <div className="rating-summary">
+            <div className="rating-overview">
+              <div className="rating-stars">
+                {renderStars(Math.round(thongKeDanhGia.diemTrungBinh))}
+              </div>
+              <span className="rating-text">
+                {thongKeDanhGia.diemTrungBinh}/5 ({thongKeDanhGia.tongSoDanhGia} đánh giá)
+              </span>
+            </div>
+            <div className="rating-distribution">
+              {thongKeDanhGia.phanPhoSao.map((count, index) => (
+                <div key={index} className="rating-bar">
+                  <span className="star-count">{index + 1}★</span>
+                  <div className="bar">
+                    <div 
+                      className="bar-fill" 
+                      style={{
+                        width: `${(count / thongKeDanhGia.tongSoDanhGia) * 100}%`
+                      }}
+                    />
+                  </div>
+                  <span className="count-text">{count}</span>
+                </div>
+              )).reverse()}
+            </div>
+          </div>
+        )}
+
+        {/* My Review Section */}
+        {isLoggedIn && (
+          <div className="my-review-section">
+            {danhGiaCuaToi ? (
+              <div className="my-review-card">
+                <div className="my-review-header">
+                  <h4>Đánh giá của tôi</h4>
+                  <div className="my-review-actions">
+                    <button 
+                      className="edit-review-btn"
+                      onClick={() => setShowReviewForm(true)}
+                    >
+                      <i className="fas fa-edit"></i> Sửa
+                    </button>
+                    <button 
+                      className="delete-review-btn"
+                      onClick={handleDeleteReview}
+                    >
+                      <i className="fas fa-trash"></i> Xóa
+                    </button>
+                  </div>
+                </div>
+                <div className="my-review-content">
+                  <div className="review-rating">
+                    {renderStars(danhGiaCuaToi.soSao)}
+                  </div>
+                  <p className="review-text">{danhGiaCuaToi.noiDung}</p>
+                  <span className="review-date">
+                    {formatDateTime(danhGiaCuaToi.thoiGianDanhGia)}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <button 
+                className="add-review-btn"
+                onClick={() => setShowReviewForm(true)}
+              >
+                <i className="fas fa-star"></i>
+                Viết đánh giá
+              </button>
+            )}
+          </div>
+        )}
+
+        {!isLoggedIn && (
+          <div className="login-prompt">
+            <p>Đăng nhập để viết đánh giá</p>
+          </div>
+        )}
+
+       
+        {showReviewForm && (
+          <div className="review-modal-overlay" onClick={() => setShowReviewForm(false)}>
+            <div className="review-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>{danhGiaCuaToi ? 'Sửa đánh giá' : 'Viết đánh giá'}</h3>
+                <button 
+                  className="close-modal-btn"
+                  onClick={() => setShowReviewForm(false)}
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <form onSubmit={handleSubmitReview} className="review-form">
+                <div className="form-group">
+                  <label>Đánh giá sao:</label>
+                  <div className="star-rating">
+                    {renderStars(reviewForm.soSao, true, (rating) => 
+                      setReviewForm(prev => ({...prev, soSao: rating}))
+                    )}
+                  </div>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="noiDung">Nội dung đánh giá:</label>
+                  <textarea
+                    id="noiDung"
+                    value={reviewForm.noiDung}
+                    onChange={(e) => setReviewForm(prev => ({...prev, noiDung: e.target.value}))}
+                    placeholder="Chia sẻ trải nghiệm của bạn về món ăn này..."
+                    rows="4"
+                    required
+                  />
+                </div>
+                
+                <div className="form-actions">
+                  <button type="button" className="cancel-btn" onClick={() => setShowReviewForm(false)}>
+                    Hủy
+                  </button>
+                  <button type="submit" className="submit-btn">
+                    {danhGiaCuaToi ? 'Cập nhật' : 'Gửi đánh giá'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Reviews List */}
+        <div className="reviews-list-section">
+          <div className="reviews-controls">
+            <label htmlFor="sortSelect">Sắp xếp theo:</label>
+            <select
+              id="sortSelect"
+              value={sapXepDanhGia}
+              onChange={(e) => setSapXepDanhGia(e.target.value)}
+              className="sort-select"
+            >
+              <option value="moi_nhat">Mới nhất</option>
+              <option value="cu_nhat">Cũ nhất</option>
+              <option value="tich_cuc">Tích cực</option>
+              <option value="tieu_cuc">Tiêu cực</option>
+            </select>
+          </div>
+
+          {loadingDanhGia ? (
+            <div className="loading-reviews">
+              <div className="loading-spinner"></div>
+              <p>Đang tải đánh giá...</p>
+            </div>
+          ) : danhGiaList.length > 0 ? (
+            <div className="reviews-list">
+              {danhGiaList.map((danhGia) => (
+                <div key={danhGia.id} className="review-card">
+                  <div className="review-header">
+                    <div className="reviewer-info">
+                      <span className="reviewer-name">
+                        {danhGia.nguoiDung?.hoTen }
+                      </span>
+                      <div className="review-rating">
+                        {renderStars(danhGia.soSao)}
+                      </div>
+                    </div>
+                    <span className="review-date">
+                      {formatDateTime(danhGia.thoiGianDanhGia)}
+                    </span>
+                  </div>
+                  <div className="review-content">
+                    <p className="review-text">{danhGia.noiDung}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="no-reviews">
+              <i className="fas fa-comment-slash"></i>
+              <p>Chưa có đánh giá nào cho món ăn này.</p>
+              {isLoggedIn && (
+                <button 
+                  className="add-review-btn"
+                  onClick={() => setShowReviewForm(true)}
+                >
+                  Hãy là người đầu tiên đánh giá!
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+     
       {dsMonAnLienQuan.length > 0 && (
         <div className="related-section">
           <h2 className="related-title">Món ăn liên quan</h2>
@@ -324,7 +659,7 @@ const ChiTietMonAn = () => {
         </div>
       )}
 
-    
+      {/* Back to Menu */}
       <div className="back-to-menu">
         <button 
           onClick={() => navigate('/menu')} 
