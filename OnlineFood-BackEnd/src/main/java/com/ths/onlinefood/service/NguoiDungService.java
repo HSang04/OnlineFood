@@ -205,6 +205,15 @@ public class NguoiDungService {
         nguoiDungRepository.save(user);
     }
 
+      public void updatePassword(Long userId, String newPassword) {
+        Optional<NguoiDung> nguoiDungOpt = nguoiDungRepository.findById(userId);
+        if (nguoiDungOpt.isPresent()) {
+            NguoiDung nguoiDung = nguoiDungOpt.get();
+            nguoiDung.setMatKhau(passwordEncoder.encode(newPassword));
+            nguoiDungRepository.save(nguoiDung);
+        }
+    }
+    
     // Vô hiệu hóa tài khoản với xác thực mật khẩu (cho user tự thực hiện)
     public void deactivateAccountWithPassword(Long id, PasswordVerificationRequest request, String currentUsername) {
         NguoiDung user = nguoiDungRepository.findById(id)
@@ -305,5 +314,54 @@ public class NguoiDungService {
         user.setTrangThai(false);
         
         nguoiDungRepository.save(user);
+    }
+    
+    public NguoiDung findByEmailForPasswordReset(String email) {
+        if (!StringUtils.hasText(email)) {
+            throw new RuntimeException("Email không được để trống.");
+        }
+
+        Optional<NguoiDung> nguoiDungOpt = nguoiDungRepository.findByEmail(email);
+
+        if (nguoiDungOpt.isEmpty()) {
+            throw new RuntimeException("Email không tồn tại trong hệ thống.");
+        }
+
+        NguoiDung nguoiDung = nguoiDungOpt.get();
+
+     
+        if (!nguoiDung.getTrangThai()) {
+            throw new RuntimeException("Tài khoản đã bị vô hiệu hóa.");
+        }
+
+        return nguoiDung;
+    }
+
+   
+    public void resetPasswordByToken(Long userId, String newPassword) {
+        
+        if (!StringUtils.hasText(newPassword)) {
+            throw new RuntimeException("Mật khẩu mới không được để trống.");
+        }
+
+        if (newPassword.length() < 6) {
+            throw new RuntimeException("Mật khẩu phải có ít nhất 6 ký tự.");
+        }
+
+    
+        Optional<NguoiDung> nguoiDungOpt = nguoiDungRepository.findById(userId);
+        if (nguoiDungOpt.isPresent()) {
+            NguoiDung nguoiDung = nguoiDungOpt.get();
+
+          
+            if (!nguoiDung.getTrangThai()) {
+                throw new RuntimeException("Tài khoản đã bị vô hiệu hóa.");
+            }
+
+            nguoiDung.setMatKhau(passwordEncoder.encode(newPassword));
+            nguoiDungRepository.save(nguoiDung);
+        } else {
+            throw new RuntimeException("Không tìm thấy người dùng.");
+        }
     }
 }
