@@ -27,6 +27,7 @@ import ResetPassword from './pages/Auth/QuenMatKhau/ResetMatKhau';
 
 import VNPayResult from './pages/Pay/KetQua/VNPayResult';
 import HoaDon from './pages/Profile/HoaDon/HoaDon';
+import ThongKe from './pages/Admin/ThongKe/ThongKe';
 
 const App = () => {
   return (
@@ -76,6 +77,7 @@ const App = () => {
         
           <Route path="/them-sua-mon-an" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
           <Route path="/them-sua-mon-an/:id" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
+           <Route path="/thong-ke" element={ <RequireAdmin>  <ThongKe /> </RequireAdmin> } />
           
         </Routes>
       </div>

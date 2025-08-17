@@ -32,7 +32,7 @@
 	Khi áp dụng Voucher ( hiện tên Voucher và mô tả thay vì emoji như hiện tại )
 	Khi dat hang co voucher thì cần - so_luong và + da_su_dung ( Đã fix )
 10/8 : Vô hiệu hóa tài khoản + Xóa tài khoản ( User tự thực hiện ) ( Đã có )
-13/8 : Xử lý quên mật khẩu
+13/8 : Xử lý quên mật khẩu ( đã làm )
 	Admin quyền tối thượng ( sửa được username + email )
 
 14/8 : fix in hóa đơn bị dư chữ OU FOOD ( Đã fix )
