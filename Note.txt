@@ -38,3 +38,5 @@
 14/8 : fix in hóa đơn bị dư chữ OU FOOD ( Đã fix )
 15/8: Khi người dùng nhập địa chỉ đúng nhưng không định vị được thì báo lỗi rõ ràng yêu cầu người dùng nhập chi tiết hơn ( Ví dụ: UBND Phường Võ Thị Sáu, Quận 3, TP. HCM không định vị được )
 	Bảo mật hóa đơn ( Đã fix )
+17/8 : Cần in báo cáo & thống kê ( xuất file excel )
+18/8 : Cần thêm hiển thị số lượng Đã bán của món ăn 
