@@ -1,9 +1,7 @@
-#  OnlineFood - Website đặt món ăn trực tuyến
+# OnlineFood - Website đặt món ăn trực tuyến
 
 ## 📖 Giới thiệu
-
 **OnlineFood** là website cho phép người dùng đặt món ăn trực tuyến, quản lý giỏ hàng, thanh toán, và theo dõi tình trạng đơn hàng.
-
 Hệ thống cung cấp **trang quản trị** dành cho Admin/Quản lý để quản lý món ăn, người dùng và đơn hàng.
 
 👉 Đây là dự án **cá nhân** nhằm rèn luyện kỹ năng **Fullstack với ReactJS & Spring Boot**.
@@ -29,7 +27,6 @@ Hệ thống cung cấp **trang quản trị** dành cho Admin/Quản lý để 
 ---
 
 ## 🛠️ Công nghệ sử dụng
-
 - **Frontend:** ReactJS
 - **Backend:** Spring Boot, Spring Security (JWT)
 - **Database:** MySQL
@@ -38,7 +35,6 @@ Hệ thống cung cấp **trang quản trị** dành cho Admin/Quản lý để 
 ---
 
 ## 📂 Cấu trúc dự án
-
 ```
 OnlineFood/
 │── backend/              # Spring Boot (REST API, Security, MySQL)
@@ -53,7 +49,7 @@ OnlineFood/
 │   └── package.json
 │
 │── database/             # File SQL khởi tạo CSDL
-│   └── restaurantdb.sql
+│   └── onlinefood_full_data.sql
 │
 └── README.md             # Tài liệu dự án
 ```
@@ -112,8 +108,6 @@ npm start
 
 ---
 
-
-
 ## 🎯 Demo
 
 ### Giao diện người dùng
@@ -128,18 +122,11 @@ npm start
 
 ---
 
-
-
-
-
 ## 📞 Liên hệ
-
 👨‍💻 **Tác giả:** HSang04  
 🔗 **GitHub:** https://github.com/HSang04  
 📧 **Email:** huynhsang2004a@gmail.com
 
 ---
-
-
 
 ⭐ **Nếu bạn thấy dự án hữu ích, hãy cho một star nhé!** ⭐

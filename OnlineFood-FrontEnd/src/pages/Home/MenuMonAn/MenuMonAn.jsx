@@ -12,20 +12,20 @@ const MenuMonAn = () => {
   const [sortBy, setSortBy] = useState("");
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(12);
 
   const navigate = useNavigate();
 
-  
   const fetchMonAn = async () => {
     setLoading(true);
     try {
-    
       const res = await axios.get('/mon-an/active'); 
       setDsMonAn(res.data);
       setDsMonAnGoc(res.data);
     } catch (err) {
       console.error("Lỗi lấy danh sách món ăn:", err);
-     
       try {
         const res = await axios.get('/mon-an');
         const activeItems = res.data.filter(mon => mon.trangThai === 1); 
@@ -56,7 +56,6 @@ const MenuMonAn = () => {
   const applyFilters = useCallback(() => {
     let filteredData = [...dsMonAnGoc];
 
-   
     if (keyword.trim()) {
       filteredData = filteredData.filter(mon =>
         mon.tenMonAn.toLowerCase().includes(keyword.toLowerCase()) ||
@@ -64,7 +63,6 @@ const MenuMonAn = () => {
       );
     }
 
-  
     if (selectedCategory) {
       filteredData = filteredData.filter(mon => 
         mon.danhMuc?.id === selectedCategory || mon.danhMucId === selectedCategory ||
@@ -72,17 +70,14 @@ const MenuMonAn = () => {
       );
     }
 
-   
     if (sortBy) {
       filteredData = filteredData.sort((a, b) => {
         switch (sortBy) {
           case "gia-tang":
-           
             return a.giaKhuyenMai - b.giaKhuyenMai;
           case "gia-giam":
             return b.giaKhuyenMai - a.giaKhuyenMai;
           case "khuyen-mai":
-          
             return b.coKhuyenMai - a.coKhuyenMai;
           default:
             return 0;
@@ -91,11 +86,25 @@ const MenuMonAn = () => {
     }
 
     setDsMonAn(filteredData);
+    setCurrentPage(1);
   }, [dsMonAnGoc, keyword, selectedCategory, sortBy]);
 
   useEffect(() => {
     applyFilters();
   }, [applyFilters]);
+
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = dsMonAn.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(dsMonAn.length / itemsPerPage);
+
+
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    // Scroll to top khi chuyển trang
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
@@ -106,11 +115,67 @@ const MenuMonAn = () => {
     setKeyword("");
     setSelectedCategory("");
     setSortBy("");
+    setCurrentPage(1);
+  };
+
+
+  const renderPaginationPages = () => {
+    const pages = [];
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, currentPage + 2);
+
+   
+    if (startPage > 1) {
+      pages.push(
+        <button
+          key={1}
+          onClick={() => paginate(1)}
+          className="page-btn"
+        >
+          1
+        </button>
+      );
+      
+      if (startPage > 2) {
+        pages.push(<span key="dots1" className="page-dots">...</span>);
+      }
+    }
+
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => paginate(i)}
+          className={`page-btn ${i === currentPage ? 'active' : ''}`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push(<span key="dots2" className="page-dots">...</span>);
+      }
+      
+      pages.push(
+        <button
+          key={totalPages}
+          onClick={() => paginate(totalPages)}
+          className="page-btn"
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return pages;
   };
 
   return (
     <div className="restaurant-layout">
-     
       <div className="top-header">
         <div className="container">
           <div className="header-content">
@@ -200,7 +265,6 @@ const MenuMonAn = () => {
               </div>
             </div>
 
-            
             {sidebarOpen && (
               <div 
                 className="sidebar-overlay"
@@ -216,12 +280,23 @@ const MenuMonAn = () => {
                 </div>
               )}
 
+              {/* Hiển thị thông tin trang hiện tại */}
+              {dsMonAn.length > 0 && (
+                <div className="pagination-info">
+                  Hiển thị {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, dsMonAn.length)} của {dsMonAn.length} món ăn
+                  {dsMonAn.filter(mon => mon.coKhuyenMai).length > 0 && (
+                    <span className="promotion-count">
+                      • {dsMonAn.filter(mon => mon.coKhuyenMai).length} món đang có khuyến mãi
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div className="products-grid">
-                {dsMonAn.length > 0 ? (
-                  dsMonAn.map((mon, index) => {
+                {currentItems.length > 0 ? (
+                  currentItems.map((mon, index) => {
                     return (
                       <div key={mon.id || `mon-${index}`} className="product-card">
-                       
                         {mon.coKhuyenMai && mon.phanTramGiamGia > 0 && (
                           <div className="sale-badge">
                             Giảm {mon.phanTramGiamGia}%
@@ -229,9 +304,8 @@ const MenuMonAn = () => {
                         )}
                         
                         <div 
-                          className="product-image"
+                          className="product-image clickable"
                           onClick={() => navigate(`/chi-tiet-mon-an/${mon.id}`)}
-                          style={{ cursor: 'pointer' }}
                         >
                           {mon.hinhAnhMonAns?.length > 0 ? (
                             <img
@@ -252,30 +326,24 @@ const MenuMonAn = () => {
                           </div>
                           
                           <h3 
-                            className="product-name"
+                            className="product-name clickable"
                             onClick={() => navigate(`/chi-tiet-mon-an/${mon.id}`)}
-                            style={{ cursor: 'pointer' }}
                           >
                             {mon.tenMonAn}
                           </h3>
                           
-                       
-                          <div className="price-section" style={{ textAlign: "center" }}>
+                          <div className="price-section">
                             {mon.coKhuyenMai ? (
                               <div>
-                                <div style={{ color: "red", fontWeight: "bold", fontSize: "26px" }}>
+                                <div className="price-promotion">
                                   {mon.giaKhuyenMai.toLocaleString()} đ
                                 </div>
-                                <div style={{ textDecoration: "line-through", color: "gray", fontSize: "15px" }}>
+                                <div className="price-original">
                                   {mon.gia.toLocaleString()} đ
                                 </div>
-                                
-                                {/* <div style={{ color: "green", fontSize: "12px", fontStyle: "italic" }}>
-                                  Tiết kiệm: {(mon.gia - mon.giaKhuyenMai).toLocaleString()} đ
-                                </div> */}
                               </div>
                             ) : (
-                              <div style={{ fontSize: "30px", color: "gray" }}>
+                              <div className="price-normal">
                                 {mon.gia.toLocaleString()} đ
                               </div>
                             )}
@@ -306,13 +374,31 @@ const MenuMonAn = () => {
                 )}
               </div>
 
-            
-              {dsMonAn.length > 0 && (
-                <div className="results-info">
-                  <p>Hiển thị {dsMonAn.length} món ăn</p>
-                  <p>
-                    {dsMonAn.filter(mon => mon.coKhuyenMai).length} món đang có khuyến mãi
-                  </p>
+              {/* Component phân trang */}
+              {totalPages > 1 && (
+                <div className="pagination-container">
+                  {/* Nút Previous */}
+                  <button
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="pagination-btn"
+                  >
+                    <i className="fas fa-chevron-left"></i> Trước
+                  </button>
+
+                  {/* Số trang */}
+                  <div className="pagination-pages">
+                    {renderPaginationPages()}
+                  </div>
+
+                  {/* Nút Next */}
+                  <button
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="pagination-btn"
+                  >
+                    Sau <i className="fas fa-chevron-right"></i>
+                  </button>
                 </div>
               )}
             </div>
