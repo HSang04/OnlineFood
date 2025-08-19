@@ -16,7 +16,6 @@ const QuanLyDonHang = () => {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [loadingInvoice, setLoadingInvoice] = useState({});
   
-
   const [isAutoRefreshing, setIsAutoRefreshing] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState(null);
   const intervalRef = useRef(null);
@@ -57,7 +56,6 @@ const QuanLyDonHang = () => {
     [ORDER_STATUS.DA_HUY]: "#f44336"
   };
 
- 
   const fetchDonHangs = useCallback(async () => {
     try {
       setLoading(true);
@@ -95,7 +93,6 @@ const QuanLyDonHang = () => {
           new Date(b.ngayTao) - new Date(a.ngayTao)
         );
         
-   
         setDonHangs(prevOrders => {
           const hasChanges = JSON.stringify(prevOrders) !== JSON.stringify(sortedOrders);
           return hasChanges ? sortedOrders : prevOrders;
@@ -105,21 +102,17 @@ const QuanLyDonHang = () => {
       }
     } catch (err) {
       console.error("Lỗi khi refresh âm thầm:", err);
-    
     } finally {
       setIsAutoRefreshing(false);
     }
   }, [jwt]);
 
- 
   useEffect(() => {
     if (jwt && donHangs.length > 0) {
-      //  refresh sau 30s
       intervalRef.current = setInterval(() => {
         silentRefresh();
       }, 30000);
 
-    
       return () => {
         if (intervalRef.current) {
           clearInterval(intervalRef.current);
@@ -128,13 +121,11 @@ const QuanLyDonHang = () => {
     }
   }, [jwt, silentRefresh, donHangs.length]);
 
-
   useEffect(() => {
     if (jwt) {
       fetchDonHangs();
     }
   }, [fetchDonHangs, jwt]);
-
 
   useEffect(() => {
     if (showModal && intervalRef.current) {
@@ -213,12 +204,10 @@ const QuanLyDonHang = () => {
     }
   };
 
-
   const handleViewInvoice = async (orderId) => {
     try {
       setLoadingInvoice(prev => ({ ...prev, [orderId]: true }));
       
- 
       const response = await axios.get(`/hoa-don/don-hang/${orderId}`, {
         headers: {
           Authorization: `Bearer ${jwt}`,
@@ -226,7 +215,6 @@ const QuanLyDonHang = () => {
       });
       
       if (response.data) {
-
         navigate(`/hoa-don/${orderId}`);
       } else {
         alert("Hóa đơn chưa được tạo cho đơn hàng này!");
@@ -272,69 +260,66 @@ const QuanLyDonHang = () => {
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
-  try {
-    setUpdating(true);
-    
-    const response = await axios.patch(`/don-hang/trang-thai/${orderId}`, {
-      trangThai: newStatus
-    }, {
-      headers: {
-        Authorization: `Bearer ${jwt}`,
-        'Content-Type': 'application/json'
-      },
-    });
+    try {
+      setUpdating(true);
+      
+      const response = await axios.patch(`/don-hang/trang-thai/${orderId}`, {
+        trangThai: newStatus
+      }, {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+          'Content-Type': 'application/json'
+        },
+      });
 
-    if (response.data) {
-    
-      if (newStatus === "HOAN_THANH") {
-        try {
-          await axios.put(`/hoa-don/cap-nhat-hoan-thanh/${orderId}`, {}, {
-            headers: {
-              Authorization: `Bearer ${jwt}`,
-            },
-          });
-          console.log("Đã cập nhật trạng thái hóa đơn thành DA_THANH_TOAN");
-        } catch (invoiceError) {
-          console.error("Lỗi khi cập nhật hóa đơn:", invoiceError);
-        
+      if (response.data) {
+        if (newStatus === "HOAN_THANH") {
+          try {
+            await axios.put(`/hoa-don/cap-nhat-hoan-thanh/${orderId}`, {}, {
+              headers: {
+                Authorization: `Bearer ${jwt}`,
+              },
+            });
+            console.log("Đã cập nhật trạng thái hóa đơn thành DA_THANH_TOAN");
+          } catch (invoiceError) {
+            console.error("Lỗi khi cập nhật hóa đơn:", invoiceError);
+          }
         }
-      }
 
-      setDonHangs(prev => prev.map(order => 
-        order.id === orderId 
-          ? { ...order, trangThai: newStatus }
-          : order
-      ));
-      
-      if (selectedOrder && selectedOrder.id === orderId) {
-        setSelectedOrder(prev => ({ ...prev, trangThai: newStatus }));
+        setDonHangs(prev => prev.map(order => 
+          order.id === orderId 
+            ? { ...order, trangThai: newStatus }
+            : order
+        ));
+        
+        if (selectedOrder && selectedOrder.id === orderId) {
+          setSelectedOrder(prev => ({ ...prev, trangThai: newStatus }));
+        }
+        
+        const statusMessage = newStatus === "HOAN_THANH" 
+          ? "Đơn hàng đã hoàn thành và hóa đơn đã được cập nhật trạng thái thanh toán!"
+          : `Cập nhật trạng thái đơn hàng #${orderId} thành công!`;
+        
+        alert(statusMessage);
+        
+        setTimeout(() => {
+          silentRefresh();
+        }, 1000);
       }
+    } catch (err) {
+      console.error("Lỗi khi cập nhật trạng thái:", err);
       
-      const statusMessage = newStatus === "HOAN_THANH" 
-        ? "Đơn hàng đã hoàn thành và hóa đơn đã được cập nhật trạng thái thanh toán!"
-        : `Cập nhật trạng thái đơn hàng #${orderId} thành công!`;
-      
-      alert(statusMessage);
-      
-   
-      setTimeout(() => {
-        silentRefresh();
-      }, 1000);
+      if (err.response?.status === 400) {
+        alert("Trạng thái không hợp lệ. Vui lòng thử lại!");
+      } else if (err.response?.status === 404) {
+        alert("Không tìm thấy đơn hàng. Vui lòng làm mới trang!");
+      } else {
+        alert("Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại!");
+      }
+    } finally {
+      setUpdating(false);
     }
-  } catch (err) {
-    console.error("Lỗi khi cập nhật trạng thái:", err);
-    
-    if (err.response?.status === 400) {
-      alert("Trạng thái không hợp lệ. Vui lòng thử lại!");
-    } else if (err.response?.status === 404) {
-      alert("Không tìm thấy đơn hàng. Vui lòng làm mới trang!");
-    } else {
-      alert("Có lỗi xảy ra khi cập nhật trạng thái. Vui lòng thử lại!");
-    }
-  } finally {
-    setUpdating(false);
-  }
-};
+  };
 
   const formatDateTime = (dateTime) => {
     const date = new Date(dateTime);
@@ -372,9 +357,9 @@ const QuanLyDonHang = () => {
 
   if (loading) {
     return (
-      <div className="quan-ly-don-hang-container">
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
+      <div className="ql-don-hang-quan-ly-don-hang-container">
+        <div className="ql-don-hang-loading-container">
+          <div className="ql-don-hang-loading-spinner"></div>
           <p>Đang tải danh sách đơn hàng...</p>
         </div>
       </div>
@@ -383,11 +368,11 @@ const QuanLyDonHang = () => {
 
   if (error) {
     return (
-      <div className="quan-ly-don-hang-container">
-        <div className="error-container">
+      <div className="ql-don-hang-quan-ly-don-hang-container">
+        <div className="ql-don-hang-error-container">
           <h2>⚠️ Có lỗi xảy ra</h2>
           <p>{error}</p>
-          <button onClick={fetchDonHangs} className="btn-retry">
+          <button onClick={fetchDonHangs} className="ql-don-hang-btn-retry">
             Thử lại
           </button>
         </div>
@@ -396,10 +381,10 @@ const QuanLyDonHang = () => {
   }
 
   return (
-    <div className="quan-ly-don-hang-container">
-      <header className="page-header">
+    <div className="ql-don-hang-quan-ly-don-hang-container">
+      <header className="ql-don-hang-page-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 className="page-title">📋 Quản lý đơn hàng</h1>
+          <h1 className="ql-don-hang-page-title">📋 Quản lý đơn hàng</h1>
           
           {/* Indicator trạng thái auto refresh */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -410,7 +395,7 @@ const QuanLyDonHang = () => {
                   height: '8px',
                   backgroundColor: '#4caf50',
                   borderRadius: '50%',
-                  animation: 'pulse 1.5s infinite'
+                  animation: 'ql-don-hang-pulse 1.5s infinite'
                 }}></div>
                 <span style={{ fontSize: '12px', color: '#666' }}>Đang cập nhật...</span>
               </div>
@@ -424,83 +409,83 @@ const QuanLyDonHang = () => {
           </div>
         </div>
         
-        <div className="stats-row">
-          <div className="stat-card">
-            <span className="stat-number">{donHangs.length}</span>
-            <span className="stat-label">Tổng đơn</span>
+        <div className="ql-don-hang-stats-row">
+          <div className="ql-don-hang-stat-card">
+            <span className="ql-don-hang-stat-number">{donHangs.length}</span>
+            <span className="ql-don-hang-stat-label">Tổng đơn</span>
           </div>
-          <div className="stat-card processing">
-            <span className="stat-number">
+          <div className="ql-don-hang-stat-card ql-don-hang-processing">
+            <span className="ql-don-hang-stat-number">
               {getOrderCountByStatus("dang_xu_ly")}
             </span>
-            <span className="stat-label">Đang xử lý</span>
+            <span className="ql-don-hang-stat-label">Đang xử lý</span>
           </div>
-          <div className="stat-card preparing">
-            <span className="stat-number">
+          <div className="ql-don-hang-stat-card ql-don-hang-preparing">
+            <span className="ql-don-hang-stat-number">
               {getOrderCountByStatus("dang_lam")}
             </span>
-            <span className="stat-label">Đang làm</span>
+            <span className="ql-don-hang-stat-label">Đang làm</span>
           </div>
-          <div className="stat-card delivering">
-            <span className="stat-number">
+          <div className="ql-don-hang-stat-card ql-don-hang-delivering">
+            <span className="ql-don-hang-stat-number">
               {getOrderCountByStatus("dang_giao")}
             </span>
-            <span className="stat-label">Đang giao</span>
+            <span className="ql-don-hang-stat-label">Đang giao</span>
           </div>
-          <div className="stat-card completed">
-            <span className="stat-number">
+          <div className="ql-don-hang-stat-card ql-don-hang-completed">
+            <span className="ql-don-hang-stat-number">
               {getOrderCountByStatus("hoan_thanh")}
             </span>
-            <span className="stat-label">Hoàn thành</span>
+            <span className="ql-don-hang-stat-label">Hoàn thành</span>
           </div>
         </div>
       </header>
 
-      <div className="filters-section">
-        <div className="search-box">
+      <div className="ql-don-hang-filters-section">
+        <div className="ql-don-hang-search-box">
           <input
             type="text"
             placeholder="Tìm theo mã đơn, tên khách hàng, địa chỉ..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
+            className="ql-don-hang-search-input"
           />
-          <span className="search-icon">🔍</span>
+          <span className="ql-don-hang-search-icon">🔍</span>
         </div>
 
-        <div className="filter-tabs">
+        <div className="ql-don-hang-filter-tabs">
           <button 
-            className={`filter-tab ${filter === "all" ? "active" : ""}`}
+            className={`ql-don-hang-filter-tab ${filter === "all" ? "ql-don-hang-active" : ""}`}
             onClick={() => setFilter("all")}
           >
             Tất cả ({getOrderCountByStatus("all")})
           </button>
           <button 
-            className={`filter-tab ${filter === "dang_xu_ly" ? "active" : ""}`}
+            className={`ql-don-hang-filter-tab ${filter === "dang_xu_ly" ? "ql-don-hang-active" : ""}`}
             onClick={() => setFilter("dang_xu_ly")}
           >
             Đang xử lý ({getOrderCountByStatus("dang_xu_ly")})
           </button>
           <button 
-            className={`filter-tab ${filter === "dang_lam" ? "active" : ""}`}
+            className={`ql-don-hang-filter-tab ${filter === "dang_lam" ? "ql-don-hang-active" : ""}`}
             onClick={() => setFilter("dang_lam")}
           >
             Đang làm ({getOrderCountByStatus("dang_lam")})
           </button>
           <button 
-            className={`filter-tab ${filter === "dang_giao" ? "active" : ""}`}
+            className={`ql-don-hang-filter-tab ${filter === "dang_giao" ? "ql-don-hang-active" : ""}`}
             onClick={() => setFilter("dang_giao")}
           >
             Đang giao ({getOrderCountByStatus("dang_giao")})
           </button>
           <button 
-            className={`filter-tab ${filter === "hoan_thanh" ? "active" : ""}`}
+            className={`ql-don-hang-filter-tab ${filter === "hoan_thanh" ? "ql-don-hang-active" : ""}`}
             onClick={() => setFilter("hoan_thanh")}
           >
             Hoàn thành ({getOrderCountByStatus("hoan_thanh")})
           </button>
           <button 
-            className={`filter-tab ${filter === "da_huy" ? "active" : ""}`}
+            className={`ql-don-hang-filter-tab ${filter === "da_huy" ? "ql-don-hang-active" : ""}`}
             onClick={() => setFilter("da_huy")}
           >
             Đã hủy ({getOrderCountByStatus("da_huy")})
@@ -508,78 +493,78 @@ const QuanLyDonHang = () => {
         </div>
       </div>
 
-      <div className="orders-section">
+      <div className="ql-don-hang-orders-section">
         {filteredOrders.length === 0 ? (
-          <div className="empty-state">
+          <div className="ql-don-hang-empty-state">
             <h3>📭 Không có đơn hàng nào</h3>
             <p>
               {searchTerm ? "Không tìm thấy đơn hàng phù hợp với từ khóa tìm kiếm." : "Chưa có đơn hàng nào trong hệ thống."}
             </p>
           </div>
         ) : (
-          <div className="orders-grid">
+          <div className="ql-don-hang-orders-grid">
             {filteredOrders.map((order) => (
-              <div key={order.id} className="order-card">
-                <div className="order-header">
-                  <div className="order-id">
+              <div key={order.id} className="ql-don-hang-order-card">
+                <div className="ql-don-hang-order-header">
+                  <div className="ql-don-hang-order-id">
                     <strong>Đơn hàng #{order.id}</strong>
-                    <span className="order-time">{getTimeElapsed(order.ngayTao)}</span>
+                    <span className="ql-don-hang-order-time">{getTimeElapsed(order.ngayTao)}</span>
                   </div>
                   <div 
-                    className="order-status"
+                    className="ql-don-hang-order-status"
                     style={{ backgroundColor: STATUS_COLORS[order.trangThai] }}
                   >
                     {STATUS_LABELS[order.trangThai]}
                   </div>
                 </div>
 
-                <div className="order-customer">
-                  <div className="customer-info">
-                    <span className="customer-icon">👤</span>
+                <div className="ql-don-hang-order-customer">
+                  <div className="ql-don-hang-customer-info">
+                    <span className="ql-don-hang-customer-icon">👤</span>
                     <div>
-                      <div className="customer-name">
+                      <div className="ql-don-hang-customer-name">
                         {order.nguoiDung?.hoTen || order.nguoiDung?.tenNguoiDung || "N/A"}
                       </div>
-                      <div className="customer-phone">
+                      <div className="ql-don-hang-customer-phone">
                         {order.nguoiDung?.soDienThoai || order.nguoiDung?.sdt || "N/A"}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="order-address">
-                  <span className="address-icon">📍</span>
-                  <span className="address-text">
+                <div className="ql-don-hang-order-address">
+                  <span className="ql-don-hang-address-icon">📍</span>
+                  <span className="ql-don-hang-address-text">
                     {order.diaChiGiaoHang || order.nguoiDung?.diaChi || "Chưa có địa chỉ"}
                   </span>
                 </div>
 
-                <div className="order-date">
-                  <span className="date-icon">📅</span>
-                  <span className="date-text">
+                <div className="ql-don-hang-order-date">
+                  <span className="ql-don-hang-date-icon">📅</span>
+                  <span className="ql-don-hang-date-text">
                     {formatDateTime(order.ngayTao)}
                   </span>
                 </div>
 
                 {order.ghiChu && (
-                  <div className="order-note">
-                    <span className="note-icon">📝</span>
-                    <span className="note-text">{order.ghiChu}</span>
+                  <div className="ql-don-hang-order-note">
+                    <span className="ql-don-hang-note-icon">📝</span>
+                    <span className="ql-don-hang-note-text">{order.ghiChu}</span>
                   </div>
                 )}
 
-                <div className="order-summary">
-                  <div className="items-count">
+                <div className="ql-don-hang-order-summary">
+                  <div className="ql-don-hang-items-count">
                     💰 Thành tiền:
                   </div>
-                  <div className="order-total">
+                  <div className="ql-don-hang-order-total">
                     {order.tongTien?.toLocaleString() || "0"}₫
                   </div>
                 </div>
 
-                <div className="order-actions">
+                <div className="ql-don-hang-order-actions">
                   <button 
-                    className="btn-view-details"
+                    className="ql-don-hang-btn-view-details"
                     onClick={() => openOrderModal(order)}
                   >
                     Chi tiết
@@ -587,7 +572,7 @@ const QuanLyDonHang = () => {
 
                   {/* Nút xem/in hóa đơn - hiển thị ngay từ khi đang xử lý */}
                   <button 
-                    className="btn-invoice"
+                    className="ql-don-hang-btn-invoice"
                     onClick={() => handleViewInvoice(order.id)}
                     disabled={loadingInvoice[order.id]}
                     title="Xem và in hóa đơn"
@@ -597,7 +582,7 @@ const QuanLyDonHang = () => {
                   
                   {order.trangThai === "DANG_XU_LY" && (
                     <button 
-                      className="btn-accept"
+                      className="ql-don-hang-btn-accept"
                       onClick={() => updateOrderStatus(order.id, "DANG_LAM")}
                       disabled={updating}
                     >
@@ -607,7 +592,7 @@ const QuanLyDonHang = () => {
                   
                   {order.trangThai === "DANG_LAM" && (
                     <button 
-                      className="btn-delivering"
+                      className="ql-don-hang-btn-delivering"
                       onClick={() => updateOrderStatus(order.id, "DANG_GIAO")}
                       disabled={updating}
                     >
@@ -617,7 +602,7 @@ const QuanLyDonHang = () => {
                   
                   {order.trangThai === "DANG_GIAO" && (
                     <button 
-                      className="btn-complete"
+                      className="ql-don-hang-btn-complete"
                       onClick={() => updateOrderStatus(order.id, "HOAN_THANH")}
                       disabled={updating}
                     >
@@ -632,138 +617,138 @@ const QuanLyDonHang = () => {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div className="ql-don-hang-modal-overlay" onClick={closeModal}>
+          <div className="ql-don-hang-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="ql-don-hang-modal-header">
               <h2>Chi tiết đơn hàng #{selectedOrder?.id || "..."}</h2>
-              <button className="btn-close" onClick={closeModal}>✕</button>
+              <button className="ql-don-hang-btn-close" onClick={closeModal}>✕</button>
             </div>
 
-            <div className="modal-body">
+            <div className="ql-don-hang-modal-body">
               {loadingDetails ? (
-                <div className="loading-container">
-                  <div className="loading-spinner"></div>
+                <div className="ql-don-hang-loading-container">
+                  <div className="ql-don-hang-loading-spinner"></div>
                   <p>Đang tải chi tiết đơn hàng...</p>
                 </div>
               ) : selectedOrder ? (
                 <>
-                  <div className="detail-section">
+                  <div className="ql-don-hang-detail-section">
                     <h3>Thông tin khách hàng</h3>
-                    <div className="detail-grid">
-                      <div className="detail-item">
-                        <span className="label">Tên:</span>
+                    <div className="ql-don-hang-detail-grid">
+                      <div className="ql-don-hang-detail-item">
+                        <span className="ql-don-hang-label">Tên:</span>
                         <span>{selectedOrder.nguoiDung?.hoTen || selectedOrder.nguoiDung?.tenNguoiDung || "N/A"}</span>
                       </div>
-                      <div className="detail-item">
-                        <span className="label">SĐT:</span>
+                      <div className="ql-don-hang-detail-item">
+                        <span className="ql-don-hang-label">SĐT:</span>
                         <span>{selectedOrder.nguoiDung?.soDienThoai || selectedOrder.nguoiDung?.sdt || "N/A"}</span>
                       </div>
-                      <div className="detail-item">
-                        <span className="label">Email:</span>
+                      <div className="ql-don-hang-detail-item">
+                        <span className="ql-don-hang-label">Email:</span>
                         <span>{selectedOrder.nguoiDung?.email || "N/A"}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="detail-section">
+                  <div className="ql-don-hang-detail-section">
                     <h3>Thông tin đơn hàng</h3>
-                    <div className="detail-grid">
-                      <div className="detail-item">
-                        <span className="label">Trạng thái:</span>
+                    <div className="ql-don-hang-detail-grid">
+                      <div className="ql-don-hang-detail-item">
+                        <span className="ql-don-hang-label">Trạng thái:</span>
                         <span
-                          className="status-badge"
+                          className="ql-don-hang-status-badge"
                           style={{ backgroundColor: STATUS_COLORS[selectedOrder.trangThai] }}
                         >
                           {STATUS_LABELS[selectedOrder.trangThai]}
                         </span>
                       </div>
-                      <div className="detail-item">
-                        <span className="label">Thời gian đặt:</span>
+                      <div className="ql-don-hang-detail-item">
+                        <span className="ql-don-hang-label">Thời gian đặt:</span>
                         <span>{formatDateTime(selectedOrder.ngayTao)}</span>
                       </div>
-                      <div className="detail-item">
-                        <span className="label">Địa chỉ giao hàng:</span>
+                      <div className="ql-don-hang-detail-item">
+                        <span className="ql-don-hang-label">Địa chỉ giao hàng:</span>
                         <span>{selectedOrder.diaChiGiaoHang || selectedOrder.nguoiDung?.diaChi || "N/A"}</span>
                       </div>
-                      <div className="detail-item">
-                        <span className="label">Ghi chú:</span>
+                      <div className="ql-don-hang-detail-item">
+                        <span className="ql-don-hang-label">Ghi chú:</span>
                         <span>{selectedOrder.ghiChu || "Không có ghi chú"}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="detail-section">
+                  <div className="ql-don-hang-detail-section">
                     <h3>Chi tiết món ăn</h3>
                     {selectedOrder.chiTietDonHang && selectedOrder.chiTietDonHang.length > 0 ? (
-                      <div className="items-list">
+                      <div className="ql-don-hang-items-list">
                         {selectedOrder.chiTietDonHang.map((item, index) => (
-                          <div key={index} className="item-row">
-                            <div className="item-info">
+                          <div key={index} className="ql-don-hang-item-row">
+                            <div className="ql-don-hang-item-info">
                               {item.monAn?.hinhAnhMonAns?.length > 0 ? (
                                 <img
                                   src={item.monAn.hinhAnhMonAns[0].duongDan}
                                   alt={item.monAn?.tenMonAn || "Món ăn"}
-                                  className="item-image"
+                                  className="ql-don-hang-item-image"
                                 />
                               ) : (
-                                <div className="item-no-image">🍽️</div>
+                                <div className="ql-don-hang-item-no-image">🍽️</div>
                               )}
-                              <div className="item-details">
-                                <div className="item-name">{item.monAn?.tenMonAn || `Món ăn ID: ${item.monAnId}`}</div>
-                                <div className="item-price">
+                              <div className="ql-don-hang-item-details">
+                                <div className="ql-don-hang-item-name">{item.monAn?.tenMonAn || `Món ăn ID: ${item.monAnId}`}</div>
+                                <div className="ql-don-hang-item-price">
                                   {(item.gia || item.donGia)?.toLocaleString() || "0"}₫ x {item.soLuong || 0}
                                 </div>
                                 {item.monAn?.khuyenMai && (
-                                  <div className="item-discount">
+                                  <div className="ql-don-hang-item-discount">
                                     Khuyến mãi: -{item.monAn.khuyenMai.giaGiam?.toLocaleString()}₫
                                   </div>
                                 )}
                               </div>
                             </div>
-                            <div className="item-total">
+                            <div className="ql-don-hang-item-total">
                               {item.thanhTien?.toLocaleString() || ((item.gia || item.donGia || 0) * (item.soLuong || 0))?.toLocaleString() || "0"}₫
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="no-items">
+                      <div className="ql-don-hang-no-items">
                         <p>⚠️ Không có thông tin chi tiết món ăn</p>
-                        <p className="note">Dữ liệu chi tiết món ăn chưa được load từ server</p>
+                        <p className="ql-don-hang-note">Dữ liệu chi tiết món ăn chưa được load từ server</p>
                       </div>
                     )}
                   </div>
 
-                  <div className="detail-section">
+                  <div className="ql-don-hang-detail-section">
                     <h3>Tổng kết thanh toán</h3>
-                    <div className="summary-rows">
-                      <div className="summary-row">
+                    <div className="ql-don-hang-summary-rows">
+                      <div className="ql-don-hang-summary-row">
                         <span>Tạm tính:</span>
                         <span>{selectedOrder.tongTienGoc?.toLocaleString() || selectedOrder.tongTien?.toLocaleString() || "0"}₫</span>
                       </div>
                       {selectedOrder.giamGia > 0 && (
-                        <div className="summary-row discount">
+                        <div className="ql-don-hang-summary-row ql-don-hang-discount">
                           <span>Giảm giá:</span>
                           <span>-{selectedOrder.giamGia?.toLocaleString()}₫</span>
                         </div>
                       )}
                       {selectedOrder.voucher && (
-                        <div className="summary-row discount">
+                        <div className="ql-don-hang-summary-row ql-don-hang-discount">
                           <span>Voucher ({selectedOrder.voucher.maVoucher}):</span>
                           <span>{selectedOrder.voucher.moTa}</span>
                         </div>
                       )}
-                      <div className="summary-row total">
+                      <div className="ql-don-hang-summary-row ql-don-hang-total">
                         <span>Tổng cộng:</span>
                         <span>{selectedOrder.tongTien?.toLocaleString() || "0"}₫</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="modal-actions">
+                  <div className="ql-don-hang-modal-actions">
                     {/* Nút xem/in hóa đơn trong modal */}
                     <button 
-                      className="btn-modal-invoice"
+                      className="ql-don-hang-btn-modal-invoice"
                       onClick={() => handleViewInvoice(selectedOrder.id)}
                       disabled={loadingInvoice[selectedOrder.id]}
                       title="Xem và in hóa đơn"
@@ -773,7 +758,7 @@ const QuanLyDonHang = () => {
 
                     {selectedOrder.trangThai === "DANG_XU_LY" && (
                       <button 
-                        className="btn-modal-accept"
+                        className="ql-don-hang-btn-modal-accept"
                         onClick={() => updateOrderStatus(selectedOrder.id, "DANG_LAM")}
                         disabled={updating}
                       >
@@ -783,7 +768,7 @@ const QuanLyDonHang = () => {
                     
                     {selectedOrder.trangThai === "DANG_LAM" && (
                       <button 
-                        className="btn-modal-delivering"
+                        className="ql-don-hang-btn-modal-delivering"
                         onClick={() => updateOrderStatus(selectedOrder.id, "DANG_GIAO")}
                         disabled={updating}
                       >
@@ -793,7 +778,7 @@ const QuanLyDonHang = () => {
                     
                     {selectedOrder.trangThai === "DANG_GIAO" && (
                       <button 
-                        className="btn-modal-complete"
+                        className="ql-don-hang-btn-modal-complete"
                         onClick={() => updateOrderStatus(selectedOrder.id, "HOAN_THANH")}
                         disabled={updating}
                       >
@@ -803,7 +788,7 @@ const QuanLyDonHang = () => {
                   </div>
                 </>
               ) : (
-                <div className="error-container">
+                <div className="ql-don-hang-error-container">
                   <p>Không thể tải chi tiết đơn hàng</p>
                 </div>
               )}
@@ -811,7 +796,6 @@ const QuanLyDonHang = () => {
           </div>
         </div>
       )}
-   
     </div>
   );
 };

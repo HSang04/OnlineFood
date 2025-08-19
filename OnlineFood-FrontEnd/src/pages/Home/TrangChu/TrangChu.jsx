@@ -70,7 +70,7 @@ const TrangChu = () => {
   }, [heroSlides.length]);
 
   return (
-    <>
+    <div className="trang-chu">
       {/* Hero Slide */}
       <section className="hero">
         <div
@@ -190,7 +190,7 @@ const TrangChu = () => {
         </div>
       </section>
 
-      {/* CTA */}
+      {/* CTA
       <section className="cta">
         <div className="container">
           <div className="cta-content">
@@ -202,9 +202,8 @@ const TrangChu = () => {
             </div>
           </div>
         </div>
-      </section>
-
-    </>
+      </section> */}
+    </div>
   );
 };
 

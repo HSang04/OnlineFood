@@ -164,7 +164,7 @@ const Header = () => {
           <>
             <li className="nav-item"><Link className="nav-link nav-hover" to="/menu">Thực đơn</Link></li>
             {renderDropdown(dropdownItemsAdmin)}
-            <li className="nav-item"><Link className="nav-link nav-hover" to="/thong-ke-doanh-thu">Thống kê doanh thu</Link></li>
+            <li className="nav-item"><Link className="nav-link nav-hover" to="/thong-ke">Thống kê doanh thu</Link></li>
             <li className="nav-item"><Link className="nav-link nav-hover" to="/profile">Hồ sơ</Link></li>
             <li className="nav-item"><span className="nav-link nav-hover logout-btn" onClick={handleLogout}>Đăng xuất</span></li>
           </>
