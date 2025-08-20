@@ -33,8 +33,9 @@ public class ThongKeService {
         LocalDateTime tuNgayTime = tuNgay.atStartOfDay();
         LocalDateTime denNgayTime = denNgay.atTime(23, 59, 59);
         
-        List<DonHang> donHangs = donHangRepository.findByNgayTaoBetweenAndTrangThaiNot(
-            tuNgayTime, denNgayTime, TrangThaiDonHang_ENUM.DA_HUY);
+        // Chỉ lấy các đơn hàng HOÀN THÀNH để tính doanh thu
+        List<DonHang> donHangs = donHangRepository.findByNgayTaoBetweenAndTrangThai(
+            tuNgayTime, denNgayTime, TrangThaiDonHang_ENUM.HOAN_THANH);
         
         Map<String, Double> doanhThuTheoNgay = new LinkedHashMap<>();
         Map<String, Integer> soDonTheoNgay = new LinkedHashMap<>();
@@ -80,8 +81,9 @@ public class ThongKeService {
         LocalDateTime tuNgay = LocalDate.of(nam, 1, 1).atStartOfDay();
         LocalDateTime denNgay = LocalDate.of(nam, 12, 31).atTime(23, 59, 59);
         
-        List<DonHang> donHangs = donHangRepository.findByNgayTaoBetweenAndTrangThaiNot(
-            tuNgay, denNgay, TrangThaiDonHang_ENUM.DA_HUY);
+        // Chỉ lấy các đơn hàng HOÀN THÀNH để tính doanh thu
+        List<DonHang> donHangs = donHangRepository.findByNgayTaoBetweenAndTrangThai(
+            tuNgay, denNgay, TrangThaiDonHang_ENUM.HOAN_THANH);
         
         Map<String, Double> doanhThuTheoThang = new LinkedHashMap<>();
         Map<String, Integer> soDonTheoThang = new LinkedHashMap<>();
@@ -125,8 +127,9 @@ public class ThongKeService {
         LocalDateTime tuNgayTime = tuNgay.atStartOfDay();
         LocalDateTime denNgayTime = denNgay.atTime(23, 59, 59);
         
-        List<Object[]> results = chiTietDonHangRepository.findTopSellingItems(
-            tuNgayTime, denNgayTime, TrangThaiDonHang_ENUM.DA_HUY);
+        // Chỉ thống kê từ những đơn hàng HOÀN THÀNH
+        List<Object[]> results = chiTietDonHangRepository.findTopSellingItemsCompleted(
+            tuNgayTime, denNgayTime, TrangThaiDonHang_ENUM.HOAN_THANH);
         
         List<Map<String, Object>> topMonAn = new ArrayList<>();
         double tongSoLuongBan = 0;
@@ -164,8 +167,9 @@ public class ThongKeService {
         LocalDateTime tuNgayTime = tuNgay.atStartOfDay();
         LocalDateTime denNgayTime = denNgay.atTime(23, 59, 59);
         
-        List<Object[]> voucherStats = donHangRepository.findVoucherUsageStats(
-            tuNgayTime, denNgayTime, TrangThaiDonHang_ENUM.DA_HUY);
+        // Chỉ thống kê voucher từ những đơn hàng HOÀN THÀNH
+        List<Object[]> voucherStats = donHangRepository.findVoucherUsageStatsCompleted(
+            tuNgayTime, denNgayTime, TrangThaiDonHang_ENUM.HOAN_THANH);
         
         List<Map<String, Object>> voucherData = new ArrayList<>();
         double tongTienGiam = 0;

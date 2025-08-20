@@ -62,6 +62,16 @@ const TrangChu = () => {
     }
   ];
 
+  // Cuộn lên đầu trang khi component mount
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+    });
+  }, []); // Chạy một lần khi component mount
+
+  // Auto slide timer
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroSlides.length);

@@ -22,6 +22,7 @@ public class MonAnDTO {
     private double giaKhuyenMai; 
     private boolean coKhuyenMai; 
     private int phanTramGiamGia;
+    private int soLuongDaBan = 0;
     
  
     public double getGiaHienThi() {
@@ -31,5 +32,13 @@ public class MonAnDTO {
    
     public double getSoTienTietKiem() {
         return coKhuyenMai ? (gia - giaKhuyenMai) : 0;
+    }
+    
+    public int getSoLuongDaBan() {
+        return soLuongDaBan;
+    }
+
+    public void setSoLuongDaBan(int soLuongDaBan) {
+        this.soLuongDaBan = soLuongDaBan;
     }
 }

@@ -26,13 +26,13 @@ const ThongKe = () => {
   });
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
-  // Data states
+ 
   const [dashboardData, setDashboardData] = useState(null);
   const [doanhThuData, setDoanhThuData] = useState(null);
   const [doanhThuThangData, setDoanhThuThangData] = useState(null);
   const [monBanChayData, setMonBanChayData] = useState(null);
   const [voucherData, setVoucherData] = useState(null);
-  const [comparisonData, setComparisonData] = useState(null);
+  // const [comparisonData, setComparisonData] = useState(null);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
   

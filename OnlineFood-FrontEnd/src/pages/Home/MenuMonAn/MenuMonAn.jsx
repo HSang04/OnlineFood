@@ -14,16 +14,48 @@ const MenuMonAn = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(12);
+  const [itemsPerPage] = useState(8);
 
   const navigate = useNavigate();
+
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+    });
+  }, []); 
 
   const fetchMonAn = async () => {
     setLoading(true);
     try {
       const res = await axios.get('/mon-an/active'); 
-      setDsMonAn(res.data);
-      setDsMonAnGoc(res.data);
+      
+      // Fetch thống kê đánh giá cho mỗi món ăn
+      const monAnWithRatings = await Promise.all(
+        res.data.map(async (mon) => {
+          try {
+            const ratingRes = await axios.get(`/danh-gia-mon-an/mon-an/${mon.id}/thong-ke`);
+            return {
+              ...mon,
+              thongKeDanhGia: ratingRes.data
+            };
+          } catch (error) {
+            // Nếu không có đánh giá, trả về món ăn với thông tin rating mặc định
+            return {
+              ...mon,
+              thongKeDanhGia: {
+                diemTrungBinh: 0,
+                tongSoDanhGia: 0
+              }
+            };
+          }
+        })
+      );
+      
+      setDsMonAn(monAnWithRatings);
+      setDsMonAnGoc(monAnWithRatings);
     } catch (err) {
       console.error("Lỗi lấy danh sách món ăn:", err);
       try {
@@ -79,6 +111,10 @@ const MenuMonAn = () => {
             return b.giaKhuyenMai - a.giaKhuyenMai;
           case "khuyen-mai":
             return b.coKhuyenMai - a.coKhuyenMai;
+          case "rating-cao":
+            return (b.thongKeDanhGia?.diemTrungBinh || 0) - (a.thongKeDanhGia?.diemTrungBinh || 0);
+          case "ban-chay":
+            return (b.soLuongDaBan || 0) - (a.soLuongDaBan || 0);
           default:
             return 0;
         }
@@ -93,22 +129,22 @@ const MenuMonAn = () => {
     applyFilters();
   }, [applyFilters]);
 
-
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = dsMonAn.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(dsMonAn.length / itemsPerPage);
 
-
   const paginate = (pageNumber) => {
     setCurrentPage(pageNumber);
-    // Scroll to top khi chuyển trang
+    // Cuộn lên đầu trang khi chuyển trang
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCategorySelect = (categoryId) => {
     setSelectedCategory(categoryId);
     setSidebarOpen(false);
+    // Cuộn lên đầu trang khi thay đổi danh mục
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const resetFilter = () => {
@@ -116,15 +152,15 @@ const MenuMonAn = () => {
     setSelectedCategory("");
     setSortBy("");
     setCurrentPage(1);
+    // Cuộn lên đầu trang khi reset filter
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-
 
   const renderPaginationPages = () => {
     const pages = [];
     let startPage = Math.max(1, currentPage - 2);
     let endPage = Math.min(totalPages, currentPage + 2);
 
-   
     if (startPage > 1) {
       pages.push(
         <button
@@ -141,7 +177,6 @@ const MenuMonAn = () => {
       }
     }
 
-
     for (let i = startPage; i <= endPage; i++) {
       pages.push(
         <button
@@ -154,7 +189,6 @@ const MenuMonAn = () => {
       );
     }
 
-    
     if (endPage < totalPages) {
       if (endPage < totalPages - 1) {
         pages.push(<span key="dots2" className="page-dots">...</span>);
@@ -221,6 +255,8 @@ const MenuMonAn = () => {
                 <option value="gia-tang">Giá: Thấp đến cao</option>
                 <option value="gia-giam">Giá: Cao đến thấp</option>
                 <option value="khuyen-mai">Khuyến mãi hot</option>
+                <option value="rating-cao">Đánh giá cao nhất</option>
+                <option value="ban-chay">Bán chạy nhất</option>
               </select>
 
               {(selectedCategory || sortBy || keyword) && (
@@ -280,7 +316,6 @@ const MenuMonAn = () => {
                 </div>
               )}
 
-              {/* Hiển thị thông tin trang hiện tại */}
               {dsMonAn.length > 0 && (
                 <div className="pagination-info">
                   Hiển thị {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, dsMonAn.length)} của {dsMonAn.length} món ăn
@@ -300,6 +335,14 @@ const MenuMonAn = () => {
                         {mon.coKhuyenMai && mon.phanTramGiamGia > 0 && (
                           <div className="sale-badge">
                             Giảm {mon.phanTramGiamGia}%
+                          </div>
+                        )}
+                        
+                        {/* Badge bán chạy */}
+                        {(mon.soLuongDaBan || 0) >= 50 && (
+                          <div className="bestseller-badge">
+                            <i className="fas fa-fire"></i>
+                            Bán chạy
                           </div>
                         )}
                         
@@ -331,6 +374,17 @@ const MenuMonAn = () => {
                           >
                             {mon.tenMonAn}
                           </h3>
+
+                          {/* Số lượng đã bán */}
+                          <div className="product-stats">
+                            {(mon.soLuongDaBan || 0) > 0 && (
+                              <div className="sold-info">
+                                <i className="fas fa-shopping-cart"></i>
+                                <span className="sold-number">{mon.soLuongDaBan}</span>
+                                <span className="sold-text">đã bán</span>
+                              </div>
+                            )}
+                          </div>
                           
                           <div className="price-section">
                             {mon.coKhuyenMai ? (
@@ -348,10 +402,6 @@ const MenuMonAn = () => {
                               </div>
                             )}
                           </div>
-
-                          {mon.moTa && (
-                            <p className="product-description">{mon.moTa}</p>
-                          )}
                           
                           <button 
                             className="buy-btn"
@@ -374,10 +424,8 @@ const MenuMonAn = () => {
                 )}
               </div>
 
-              {/* Component phân trang */}
               {totalPages > 1 && (
                 <div className="pagination-container">
-                  {/* Nút Previous */}
                   <button
                     onClick={() => paginate(currentPage - 1)}
                     disabled={currentPage === 1}
@@ -386,12 +434,10 @@ const MenuMonAn = () => {
                     <i className="fas fa-chevron-left"></i> Trước
                   </button>
 
-                  {/* Số trang */}
                   <div className="pagination-pages">
                     {renderPaginationPages()}
                   </div>
 
-                  {/* Nút Next */}
                   <button
                     onClick={() => paginate(currentPage + 1)}
                     disabled={currentPage === totalPages}

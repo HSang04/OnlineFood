@@ -7,6 +7,7 @@ import com.ths.onlinefood.model.HinhAnhMonAn;
 import com.ths.onlinefood.model.MonAn;
 import com.ths.onlinefood.repository.HinhAnhMonAnRepository;
 import com.ths.onlinefood.repository.MonAnRepository;
+import com.ths.onlinefood.repository.ChiTietDonHangRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +25,7 @@ public class MonAnService {
     private final HinhAnhMonAnRepository hinhAnhMonAnRepository;
     private final Cloudinary cloudinary;
     private final MonAnDTOConverter monAnDTOConverter;
+    private final ChiTietDonHangRepository chiTietDonHangRepository;
 
     public List<MonAn> getAll() {
         return monAnRepository.findAll();
@@ -145,24 +147,35 @@ public class MonAnService {
     }
     
     public List<MonAnDTO> getAllDTOs() {
-        return monAnRepository.findAll()
-                .stream()
-                .map(monAn -> {
-             
-                    monAn.getHinhAnhMonAns().size();
-                    return monAnDTOConverter.convertToDTO(monAn);
-                })
-                .toList();
-    }
+       return monAnRepository.findAll()
+               .stream()
+               .map(monAn -> {
+              
+                   monAn.getHinhAnhMonAns().size();
+                   MonAnDTO dto = monAnDTOConverter.convertToDTO(monAn);
+
+                   int soLuongDaBan = getSoLuongDaBan(monAn.getId());
+                   dto.setSoLuongDaBan(soLuongDaBan);
+
+                   return dto;
+               })
+               .toList();
+   }
     
     public List<MonAnDTO> getActiveDTOs() {
         return monAnRepository.findAll()
                 .stream()
                 .filter(monAn -> monAn.getTrangThai() == 1)
                 .map(monAn -> {
-                 
+                   
                     monAn.getHinhAnhMonAns().size();
-                    return monAnDTOConverter.convertToDTO(monAn);
+                    MonAnDTO dto = monAnDTOConverter.convertToDTO(monAn);
+
+                  
+                    int soLuongDaBan = getSoLuongDaBan(monAn.getId());
+                    dto.setSoLuongDaBan(soLuongDaBan);
+
+                    return dto;
                 })
                 .toList();
     }
@@ -171,4 +184,11 @@ public class MonAnService {
         return monAnRepository.findById(id)
                 .map(monAnDTOConverter::convertToDTO);
     }
+    
+    public int getSoLuongDaBan(Long monAnId) {
+  
+    Integer soLuong = chiTietDonHangRepository.findTotalSoldQuantityByMonAnId(monAnId);
+    return soLuong != null ? soLuong : 0;
+}
+
 }

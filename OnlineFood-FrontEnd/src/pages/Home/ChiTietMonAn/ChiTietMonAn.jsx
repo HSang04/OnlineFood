@@ -27,6 +27,14 @@ const ChiTietMonAn = () => {
   const idNguoiDung = localStorage.getItem("idNguoiDung");
   const isLoggedIn = !!idNguoiDung;
 
+    useEffect(() => {
+      window.scrollTo({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
+    }, []); 
+
   const fetchChiTietMonAn = useCallback(async () => {
     setLoading(true);
     try {
