@@ -29,6 +29,8 @@ import VNPayResult from './pages/Pay/KetQua/VNPayResult';
 import HoaDon from './pages/Profile/HoaDon/HoaDon';
 import ThongKe from './pages/Admin/ThongKe/ThongKe';
 
+import TinNhan from './pages/Profile/TinNhan/TinNhan';
+
 const App = () => {
   return (
     <Router>
@@ -50,6 +52,7 @@ const App = () => {
            <Route path="/lich-su-giao-dich"element={<LichSuGiaoDich />} />
            <Route path="/forgot-password" element={<QuenMatKhau />} />
            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/chat" element={<TinNhan />} />
 
           <Route path="/vnpay-result" element={<VNPayResult />} />
           <Route path="/payment-result" element={<VNPayResult />} />

@@ -41,3 +41,6 @@
 17/8 : Cần in báo cáo & thống kê ( xuất file excel )
 18/8 : Cần thêm hiển thị số lượng Đã bán của món ăn  ( Đã làm )
 20/8 : Cần phân trang Quản lý Đơn hàng 
+
+21/8 : Thêm đường vào chỗ Chat
+       Hiện thông tin về nhân viên reply

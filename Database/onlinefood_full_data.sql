@@ -180,6 +180,23 @@ CREATE TABLE `hoa_don` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `hoi_thoai`
+--
+
+DROP TABLE IF EXISTS `hoi_thoai`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `hoi_thoai` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `khach_hang_id` bigint NOT NULL,
+  `thoi_gian_tao` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `khach_hang_id` (`khach_hang_id`),
+  CONSTRAINT `hoi_thoai_ibfk_1` FOREIGN KEY (`khach_hang_id`) REFERENCES `nguoi_dung` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `khuyen_mai`
 --
 
@@ -243,6 +260,26 @@ CREATE TABLE `nguoi_dung` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `tin_nhan`
+--
+
+DROP TABLE IF EXISTS `tin_nhan`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `tin_nhan` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `hoi_thoai_id` bigint NOT NULL,
+  `nguoi_gui_id` bigint NOT NULL,
+  `vai_tro_nguoi_gui` enum('ADMIN','QUANLY','NHANVIEN_QUANLYDONHANG','NHANVIEN_QUANLYMONAN','KHACHHANG') NOT NULL,
+  `noi_dung` text NOT NULL,
+  `thoi_gian_tao` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `hoi_thoai_id` (`hoi_thoai_id`),
+  CONSTRAINT `tin_nhan_ibfk_1` FOREIGN KEY (`hoi_thoai_id`) REFERENCES `hoi_thoai` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `voucher`
 --
 
@@ -273,6 +310,9 @@ CREATE TABLE `voucher` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
+-- Dump completed on 2025-08-21 17:42:31
+
+
 INSERT INTO `nguoi_dung` (
     `ho_ten`, `email`, `username`, `mat_khau`, `so_dien_thoai`, `dia_chi`, `vai_tro`, `ngay_tao`, `trang_thai`
 ) VALUES (
@@ -287,4 +327,3 @@ INSERT INTO `nguoi_dung` (
     1
 );
 
--- Dump completed on 2025-08-20 20:43:24
