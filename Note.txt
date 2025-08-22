@@ -43,4 +43,10 @@
 20/8 : Cần phân trang Quản lý Đơn hàng 
 
 21/8 : Thêm đường vào chỗ Chat
-       Hiện thông tin về nhân viên reply
+       Hiện thông tin về nhân viên reply ( Đã làm )
+22/8: Menu mặc định hiện theo giảm giá % 
+      Biểu đồ nên hiện thêm danh sách màu gì, sản phẩm gì bên góc bên ngoài biểu đồ tròn
+23/8 : Fix Thống kê voucher hiện thêm thông tin Voucher
+      (HUYNH_SANG_XIN_CHAO) bị lấn sang thông tin khác
+      Bảo mật các trang quản lý của admin
+      Kiểm tra các trang của user khi chưa đăng nhập sẽ thế nào

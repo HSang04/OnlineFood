@@ -51,7 +51,8 @@ public class AppConfig {
                 .requestMatchers("/api/nguoi-dung/**").hasAnyAuthority("ADMIN", "QUANLY")
                 .requestMatchers("/api/gio-hang/**").hasAnyAuthority("KHACHHANG")
                 .requestMatchers("/api/danh-gia-mon-an/**").authenticated() 
-               
+                .requestMatchers("/api/tin-nhan/**").hasAnyAuthority("ADMIN", "QUANLY", "NHANVIEN_QUANLYDONHANG", "NHANVIEN_QUANLYMONAN", "KHACHHANG")
+     
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )
