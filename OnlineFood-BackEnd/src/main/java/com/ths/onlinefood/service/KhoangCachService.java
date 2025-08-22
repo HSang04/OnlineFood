@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class APIKhoangCachService {
+public class KhoangCachService {
 
     private static final String API_KEY = "eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjA0MmIzM2NhMWNlNzRiYjNiYjZhYzhhNmM4MjZkZjE5IiwiaCI6Im11cm11cjY0In0="; 
     private static final double QUAN_AN_LAT = 10.773829;

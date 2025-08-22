@@ -14,6 +14,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
+import * as XLSX from 'xlsx';
 import axios from '../../../services/axiosInstance';
 import './ThongKe.css';
 
@@ -32,12 +33,209 @@ const ThongKe = () => {
   const [doanhThuThangData, setDoanhThuThangData] = useState(null);
   const [monBanChayData, setMonBanChayData] = useState(null);
   const [voucherData, setVoucherData] = useState(null);
-  // const [comparisonData, setComparisonData] = useState(null);
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
   
   const jwt = localStorage.getItem('jwt');
 
+ 
+  const exportToExcel = () => {
+    let workbook = XLSX.utils.book_new();
+    let fileName = '';
+
+    switch (activeTab) {
+      case 'dashboard':
+        if (dashboardData) {
+          // Sheet 1: Tổng quan
+          const tongQuanData = [
+            ['BÁOCÁO TỔNG QUAN'],
+            ['Ngày xuất:', new Date().toLocaleDateString('vi-VN')],
+            [],
+            ['Thống kê theo thời gian', '', 'Doanh thu', 'Số đơn hàng', 'Doanh thu TB'],
+            ['Hôm nay', '', 
+              dashboardData.tongQuan.homNay?.tongDoanhThu || 0, 
+              dashboardData.tongQuan.homNay?.tongSoDon || 0,
+              dashboardData.tongQuan.homNay?.doanhThuTrungBinh || 0
+            ],
+            ['Tuần qua', '', 
+              dashboardData.tongQuan.tuanQua?.tongDoanhThu || 0, 
+              dashboardData.tongQuan.tuanQua?.tongSoDon || 0,
+              dashboardData.tongQuan.tuanQua?.doanhThuTrungBinh || 0
+            ],
+            ['Tháng qua', '', 
+              dashboardData.tongQuan.thangQua?.tongDoanhThu || 0, 
+              dashboardData.tongQuan.thangQua?.tongSoDon || 0,
+              dashboardData.tongQuan.thangQua?.doanhThuTrungBinh || 0
+            ],
+            [],
+            ['Top 5 món bán chạy'],
+            ['STT', 'Tên món ăn', 'Số lượng bán', 'Doanh thu']
+          ];
+
+          // Thêm dữ liệu top món ăn
+          dashboardData.monBanChay?.topMonAn?.slice(0, 5).forEach((item, index) => {
+            tongQuanData.push([
+              index + 1,
+              item.tenMonAn,
+              item.soLuongBan,
+              item.doanhThu
+            ]);
+          });
+
+          tongQuanData.push([]);
+          tongQuanData.push(['Trạng thái đơn hàng']);
+          Object.entries(dashboardData.tongQuan.thongKeTrangThai || {}).forEach(([status, count]) => {
+            let statusName = status;
+            switch(status) {
+              case 'DANG_XU_LY': statusName = 'Đang xử lý'; break;
+              case 'DANG_LAM': statusName = 'Đang làm'; break;
+              case 'DANG_GIAO': statusName = 'Đang giao'; break;
+              case 'HOAN_THANH': statusName = 'Hoàn thành'; break;
+              case 'DA_HUY': statusName = 'Đã hủy'; break;
+              default: statusName = status; break;
+            }
+            tongQuanData.push([statusName, count]);
+          });
+
+          const ws = XLSX.utils.aoa_to_sheet(tongQuanData);
+          XLSX.utils.book_append_sheet(workbook, ws, 'Tổng quan');
+          fileName = 'BaoCao_TongQuan';
+        }
+        break;
+
+      case 'doanhThu':
+        if (doanhThuData) {
+          const doanhThuSheetData = [
+            ['BÁO CÁO DOANH THU THEO NGÀY'],
+            ['Từ ngày:', dateRange.tuNgay, 'Đến ngày:', dateRange.denNgay],
+            ['Ngày xuất:', new Date().toLocaleDateString('vi-VN')],
+            [],
+            ['Tổng doanh thu:', doanhThuData.tongDoanhThu],
+            ['Tổng đơn hàng:', doanhThuData.tongSoDon],
+            ['Doanh thu trung bình/đơn:', doanhThuData.doanhThuTrungBinh],
+            [],
+            ['Chi tiết theo ngày'],
+            ['Ngày', 'Doanh thu', 'Số đơn hàng']
+          ];
+
+          doanhThuData.chartData?.forEach(item => {
+            doanhThuSheetData.push([
+              item.ngay,
+              item.doanhThu,
+              item.soDon
+            ]);
+          });
+
+          const ws = XLSX.utils.aoa_to_sheet(doanhThuSheetData);
+          XLSX.utils.book_append_sheet(workbook, ws, 'Doanh thu theo ngày');
+          fileName = `BaoCao_DoanhThu_${dateRange.tuNgay}_${dateRange.denNgay}`;
+        }
+        break;
+
+      case 'doanhThuThang':
+        if (doanhThuThangData) {
+          const doanhThuThangSheetData = [
+            ['BÁO CÁO DOANH THU THEO THÁNG'],
+            ['Năm:', selectedYear],
+            ['Ngày xuất:', new Date().toLocaleDateString('vi-VN')],
+            [],
+            ['Tổng doanh thu năm:', doanhThuThangData.tongDoanhThu],
+            ['Tổng đơn hàng:', doanhThuThangData.tongSoDon],
+            ['Trung bình tháng:', doanhThuThangData.tongDoanhThu / 12],
+            [],
+            ['Chi tiết theo tháng'],
+            ['Tháng', 'Doanh thu', 'Số đơn hàng']
+          ];
+
+          doanhThuThangData.chartData?.forEach(item => {
+            doanhThuThangSheetData.push([
+              `Tháng ${item.thang}`,
+              item.doanhThu,
+              item.soDon
+            ]);
+          });
+
+          const ws = XLSX.utils.aoa_to_sheet(doanhThuThangSheetData);
+          XLSX.utils.book_append_sheet(workbook, ws, 'Doanh thu theo tháng');
+          fileName = `BaoCao_DoanhThuThang_${selectedYear}`;
+        }
+        break;
+
+      case 'monBanChay':
+        if (monBanChayData) {
+          const monBanChaySheetData = [
+            ['BÁO CÁO MÓN ĂN BÁN CHẠY'],
+            ['Từ ngày:', dateRange.tuNgay, 'Đến ngày:', dateRange.denNgay],
+            ['Ngày xuất:', new Date().toLocaleDateString('vi-VN')],
+            [],
+            ['Tổng món ăn khác nhau:', monBanChayData.soMonKhacNhau],
+            ['Tổng số lượng bán:', monBanChayData.tongSoLuongBan],
+            ['Tổng doanh thu món ăn:', monBanChayData.tongDoanhThuMonAn],
+            [],
+            ['Top món ăn bán chạy'],
+            ['Hạng', 'Tên món ăn', 'Số lượng bán', 'Doanh thu', 'Đơn giá trung bình']
+          ];
+
+          monBanChayData.topMonAn?.forEach((item, index) => {
+            monBanChaySheetData.push([
+              index + 1,
+              item.tenMonAn,
+              item.soLuongBan,
+              item.doanhThu,
+              item.donGiaTrungBinh
+            ]);
+          });
+
+          const ws = XLSX.utils.aoa_to_sheet(monBanChaySheetData);
+          XLSX.utils.book_append_sheet(workbook, ws, 'Món bán chạy');
+          fileName = `BaoCao_MonBanChay_${dateRange.tuNgay}_${dateRange.denNgay}`;
+        }
+        break;
+
+      case 'voucher':
+        if (voucherData) {
+          const voucherSheetData = [
+            ['BÁO CÁO THỐNG KÊ VOUCHER'],
+            ['Từ ngày:', dateRange.tuNgay, 'Đến ngày:', dateRange.denNgay],
+            ['Ngày xuất:', new Date().toLocaleDateString('vi-VN')],
+            [],
+            ['Số voucher khác nhau:', voucherData.soVoucherKhacNhau],
+            ['Tổng lượt sử dụng:', voucherData.tongLuotSuDung],
+            ['Tổng tiền giảm:', voucherData.tongTienGiam],
+            [],
+            ['Chi tiết voucher đã sử dụng'],
+            ['Mã voucher', 'Loại', 'Giá trị', 'Số lượt sử dụng', 'Tổng tiền giảm']
+          ];
+
+          voucherData.voucherData?.forEach(voucher => {
+            voucherSheetData.push([
+              voucher.maVoucher,
+              voucher.loai === 'PHAN_TRAM' ? 'Phần trăm' : 'Số tiền',
+              voucher.loai === 'PHAN_TRAM' ? `${voucher.giaTri}%` : voucher.giaTri,
+              voucher.soLuotSuDung,
+              voucher.tongTienGiam
+            ]);
+          });
+
+          const ws = XLSX.utils.aoa_to_sheet(voucherSheetData);
+          XLSX.utils.book_append_sheet(workbook, ws, 'Thống kê voucher');
+          fileName = `BaoCao_Voucher_${dateRange.tuNgay}_${dateRange.denNgay}`;
+        }
+        break;
+
+      default:
+        alert('Không có dữ liệu để xuất!');
+        return;
+    }
+
+    // Kiểm tra xem workbook có sheet nào không
+    if (workbook.SheetNames && workbook.SheetNames.length > 0) {
+      fileName += `_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+    } else {
+      alert('Không có dữ liệu để xuất!');
+    }
+  };
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -55,7 +253,6 @@ const ThongKe = () => {
       setLoading(false);
     }
   }, [jwt]);
-
 
   const fetchDoanhThuTheoNgay = useCallback(async () => {
     try {
@@ -85,7 +282,6 @@ const ThongKe = () => {
     }
   }, [jwt, dateRange]);
 
-
   const fetchDoanhThuTheoThang = useCallback(async () => {
     try {
       setLoading(true);
@@ -114,7 +310,6 @@ const ThongKe = () => {
     }
   }, [jwt, selectedYear]);
 
-
   const fetchMonBanChay = useCallback(async () => {
     try {
       setLoading(true);
@@ -137,7 +332,6 @@ const ThongKe = () => {
     }
   }, [jwt, dateRange]);
 
-
   const fetchVoucherStats = useCallback(async () => {
     try {
       setLoading(true);
@@ -159,11 +353,9 @@ const ThongKe = () => {
     }
   }, [jwt, dateRange]);
 
-
   useEffect(() => {
     fetchDashboardData();
   }, [fetchDashboardData]);
-
  
   useEffect(() => {
     switch (activeTab) {
@@ -214,38 +406,43 @@ const ThongKe = () => {
   return (
     <div className="thong-ke-container">
       <header className="thong-ke-header">
-        <h1> Thống kê & Báo cáo</h1>
-        <div className="date-controls">
-          <div className="date-range">
-            <label>Từ ngày:</label>
-            <input
-              type="date"
-              value={dateRange.tuNgay}
-              onChange={(e) => setDateRange(prev => ({ ...prev, tuNgay: e.target.value }))}
-            />
-            <label>Đến ngày:</label>
-            <input
-              type="date"
-              value={dateRange.denNgay}
-              onChange={(e) => setDateRange(prev => ({ ...prev, denNgay: e.target.value }))}
-            />
+        <h1>📊 Thống kê & Báo cáo</h1>
+        <div className="header-controls">
+          <div className="date-controls">
+            <div className="date-range">
+              <label>Từ ngày:</label>
+              <input
+                type="date"
+                value={dateRange.tuNgay}
+                onChange={(e) => setDateRange(prev => ({ ...prev, tuNgay: e.target.value }))}
+              />
+              <label>Đến ngày:</label>
+              <input
+                type="date"
+                value={dateRange.denNgay}
+                onChange={(e) => setDateRange(prev => ({ ...prev, denNgay: e.target.value }))}
+              />
+            </div>
+            <div className="year-selector">
+              <label>Năm:</label>
+              <select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+              >
+                {Array.from({ length: 5 }, (_, i) => {
+                  const year = new Date().getFullYear() - i;
+                  return (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
           </div>
-          <div className="year-selector">
-            <label>Năm:</label>
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-            >
-              {Array.from({ length: 5 }, (_, i) => {
-                const year = new Date().getFullYear() - i;
-                return (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+          <button className="export-btn" onClick={exportToExcel}>
+            📥 Xuất Excel
+          </button>
         </div>
       </header>
 

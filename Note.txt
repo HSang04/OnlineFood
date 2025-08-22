@@ -38,7 +38,7 @@
 14/8 : fix in hóa đơn bị dư chữ OU FOOD ( Đã fix )
 15/8: Khi người dùng nhập địa chỉ đúng nhưng không định vị được thì báo lỗi rõ ràng yêu cầu người dùng nhập chi tiết hơn ( Ví dụ: UBND Phường Võ Thị Sáu, Quận 3, TP. HCM không định vị được )
 	Bảo mật hóa đơn ( Đã fix )
-17/8 : Cần in báo cáo & thống kê ( xuất file excel )
+17/8 : Cần in báo cáo & thống kê ( xuất file excel ) ( Đã làm )
 18/8 : Cần thêm hiển thị số lượng Đã bán của món ăn  ( Đã làm )
 20/8 : Cần phân trang Quản lý Đơn hàng 
 
@@ -50,3 +50,7 @@
       (HUYNH_SANG_XIN_CHAO) bị lấn sang thông tin khác
       Bảo mật các trang quản lý của admin
       Kiểm tra các trang của user khi chưa đăng nhập sẽ thế nào
+	admin cần có quyền xem hóa đơn tại quản lý đơn hàng
+	Hóa đơn số 32 đang bị sai giá tiền tạm tính. ( cần check lại logic )
+	Cần có thêm Quản lý giao dịch 
+	Chỗ thanh toán chỉ cần 1 là tiền mặt, 2 là ví điện tử, không cần select box

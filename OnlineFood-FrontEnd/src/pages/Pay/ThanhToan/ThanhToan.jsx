@@ -17,8 +17,6 @@ const ThanhToan = () => {
   const [giamGia, setGiamGia] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
-
   const [phuongThucThanhToan, setPhuongThucThanhToan] = useState("COD"); 
   const [bankCode, setBankCode] = useState(""); 
 
@@ -26,6 +24,9 @@ const ThanhToan = () => {
   const jwt = localStorage.getItem("jwt");
 
  
+  const PHI_SHIP = 30000; 
+  const MIEN_PHI_SHIP_TU = 200000; 
+
   const danhSachNganHang = [
     { code: "", name: "Cổng thanh toán VNPay" },
     { code: "VNPAYQR", name: "VNPay QR" },
@@ -49,7 +50,6 @@ const ThanhToan = () => {
     return monAn?.gia || 0;
   }, []);
 
-  // Tính tổng tiền gốc từ giỏ hàng nếu chưa có
   useEffect(() => {
     if (tongTienGoc === 0 && gioHang.length > 0) {
       const calculatedTotal = gioHang.reduce((sum, item) => {
@@ -79,6 +79,19 @@ const ThanhToan = () => {
       fetchDiaChiCu();
     }
   }, [nguoiDungId, jwt]);
+
+
+  const tinhPhiShip = () => {
+    const tongTienSauGiamGia = tongTienGoc - giamGia;
+    return tongTienSauGiamGia >= MIEN_PHI_SHIP_TU ? 0 : PHI_SHIP;
+  };
+
+ 
+  const phiShip = tinhPhiShip();
+
+  const tongTienDonHang = tongTienGoc - giamGia;
+ 
+  const tongTienThanhToan = tongTienDonHang + phiShip;
 
   if (!state || !gioHang || gioHang.length === 0) {
     return (
@@ -176,18 +189,15 @@ const ThanhToan = () => {
     setError("");
   };
 
- 
-  const tongTienCuoi = tongTienGoc - giamGia;
-
-
   const taoDuLieuDonHang = (khoangCach) => {
     return {
       nguoiDungId: parseInt(nguoiDungId),
       diaChiGiaoHang: diaChi,
       ghiChu: ghiChu.trim() || null,
-      tongTien: tongTienCuoi,
+      tongTien: tongTienDonHang, 
       tongTienGoc: tongTienGoc,
       giamGia: giamGia,
+      
       voucherId: voucherData?.id || null,
       khoangCach: khoangCach,
       phuongThucThanhToan: phuongThucThanhToan,
@@ -200,23 +210,20 @@ const ThanhToan = () => {
     };
   };
 
-
   const handleVNPayPayment = async (khoangCach) => {
     try {
       console.log("Đang chuẩn bị thanh toán VNPay...");
       
-     
       const donHangData = taoDuLieuDonHang(khoangCach);
       sessionStorage.setItem('pendingOrder', JSON.stringify(donHangData));
       sessionStorage.setItem('cartToDelete', nguoiDungId);
       
-     
       const tempOrderId = Date.now();
       
       const response = await axios.get('/create-payment', {
         params: {
           bookingId: tempOrderId.toString(),
-          amount: tongTienCuoi,
+          amount: tongTienThanhToan, 
           bankCode: bankCode
         }
       });
@@ -224,7 +231,6 @@ const ThanhToan = () => {
       console.log("Phản hồi từ API create-payment:", response.data);
 
       if (response.data.code === "00") {
-        
         window.location.href = response.data.paymentUrl;
       } else {
         console.error("Lỗi VNPay - Mã code khác 00:", response.data);
@@ -278,6 +284,15 @@ const ThanhToan = () => {
 
       const phuongThucText = phuongThucThanhToan === "COD" ? "Tiền mặt khi nhận hàng" : "Ví điện tử VNPay";
       
+  
+      // let thongBaoPhiShip = "";
+      // if (phiShip === 0) {
+      //   thongBaoPhiShip = `🎉 MIỄN PHÍ GIAO HÀNG (đơn hàng từ ${MIEN_PHI_SHIP_TU.toLocaleString()}₫)`;
+      // } else {
+      //   const thienThieu = MIEN_PHI_SHIP_TU - (tongTienGoc - giamGia);
+      //   thongBaoPhiShip = `📦 Phí giao hàng: ${phiShip.toLocaleString()}₫\n💡 Mua thêm ${thienThieu.toLocaleString()}₫ để MIỄN PHÍ SHIP!`;
+      // }
+      
       const confirmOrder = window.confirm(
         `Xác nhận đặt hàng:\n\n` +
         `• Địa chỉ giao hàng: ${diaChi}\n` +
@@ -286,7 +301,11 @@ const ThanhToan = () => {
         `• Phương thức thanh toán: ${phuongThucText}\n` +
         `${ghiChu.trim() ? `• Ghi chú: ${ghiChu}\n` : ''}` +
         `${voucherData ? `• Voucher: ${voucherData.maVoucher} (-${giamGia.toLocaleString()}₫)\n` : ''}` +
-        `• Tổng tiền: ${tongTienCuoi.toLocaleString()}₫\n\n` +
+        
+        `• Tổng tiền đơn hàng: ${tongTienDonHang.toLocaleString()}₫\n` +
+          
+        `• Phí giao hàng: 30.000₫\n` +
+        `• Tổng tiền thanh toán: ${tongTienThanhToan.toLocaleString()}₫\n\n` +
         `Bạn có muốn tiếp tục đặt hàng không?`
       );
 
@@ -296,10 +315,8 @@ const ThanhToan = () => {
       }
 
       if (phuongThucThanhToan === "VNPAY") {
-       
         await handleVNPayPayment(khoangCach);
       } else {
-      
         const donHangData = taoDuLieuDonHang(khoangCach);
 
         console.log("Dữ liệu đặt hàng COD:", donHangData);
@@ -309,7 +326,6 @@ const ThanhToan = () => {
         if (response.data) {
           const donHangId = response.data.id;
           
-        
           try {
             await axios.delete(`/gio-hang/${nguoiDungId}/clear`);
           } catch (clearError) {
@@ -324,11 +340,19 @@ const ThanhToan = () => {
             console.error("Lỗi khi tạo hóa đơn COD:", hoaDonError);
           }
           
-          alert("Đặt hàng thành công! Hóa đơn đã được tạo. Bạn sẽ thanh toán tiền mặt khi nhận hàng.");
+          // Thông báo thành công với thông tin phí ship
+          let thongBaoThanhCong = "Đặt hàng thành công! Hóa đơn đã được tạo. Bạn sẽ thanh toán tiền mặt khi nhận hàng.";
+          if (phiShip === 0) {
+            thongBaoThanhCong += "\n\n🎉 Chúc mừng! Đơn hàng của bạn được MIỄN PHÍ GIAO HÀNG!";
+          } else {
+            thongBaoThanhCong += `\n\n📦 Phí giao hàng: ${phiShip.toLocaleString()}₫ (đã bao gồm trong tổng tiền)`;
+          }
+          
+          alert(thongBaoThanhCong);
           navigate('/', { 
             state: { 
               donHangId: donHangId,
-              tongTien: tongTienCuoi,
+              tongTien: tongTienThanhToan,
               phuongThucThanhToan: "COD",
               message: "Đặt hàng thành công! Hóa đơn đã được tạo."
             } 
@@ -339,7 +363,21 @@ const ThanhToan = () => {
     } catch (err) {
       console.error("Lỗi khi đặt hàng:", err);
       
-      if (err.response?.status === 400) {
+      if (err.response?.status === 400 && err.config?.url?.includes('khoang-cach/dia-chi')) {
+        const errorMessage = err.response?.data?.error || "Không thể xác định vị trí địa chỉ";
+        
+        alert(
+          ` Lỗi xác định địa chỉ giao hàng\n\n` +
+          `${errorMessage}\n\n` +
+          ` Rất tiếc, chúng tôi không thể xác định chính xác vị trí địa chỉ bạn nhập.\n\n` +
+          `💡 Gợi ý:\n` +
+          `• Vui lòng nhập địa chỉ chi tiết hơn (số nhà, tên đường, phường/xã)\n` +
+          `• Hoặc thử nhập một địa chỉ gần đó (ví dụ: tên đường chính, chợ gần nhà)\n` +
+          `• Nếu vẫn gặp lỗi, bạn có thể nhập địa chỉ gần nhất có thể và ghi chú thêm địa chỉ ở phần ghi chú\n` +
+          `• Mong quý khách thông cảm vì sự bất tiện này!\n\n` +
+          `📞 Hoặc liên hệ hotline để được hỗ trợ: 1900 2403`
+        );
+      } else if (err.response?.status === 400) {
         const errorMessage = err.response?.data?.message || "Có lỗi xảy ra khi đặt hàng";
         
         if (errorMessage.includes("Voucher không hợp lệ")) {
@@ -362,7 +400,6 @@ const ThanhToan = () => {
     <div className="thanh-toan-container">
       <h2 className="page-title">🧾 Xác nhận thanh toán</h2>
 
-    
       <div className="section">
         <h3 className="section-title">Sản phẩm đã chọn</h3>
         <div className="product-list">
@@ -402,7 +439,6 @@ const ThanhToan = () => {
         </div>
       </div>
 
-  
       <div className="section">
         <h3 className="section-title">Địa chỉ nhận hàng</h3>
         <div className="address-section">
@@ -439,13 +475,23 @@ const ThanhToan = () => {
             type="text"
             value={diaChi !== diaChiCu ? diaChi : ""}
             onChange={(e) => setDiaChi(e.target.value)}
-            placeholder="Nhập địa chỉ giao hàng mới"
+            placeholder="Nhập địa chỉ chi tiết (số nhà, tên đường, phường, quận)..."
             disabled={diaChi === diaChiCu}
             className={`address-input ${diaChi === diaChiCu ? 'disabled' : ''}`}
           />
+          
+          <div className="address-hint">
+            <div className="hint-item">
+              <span className="hint-icon">💡</span>
+              <span>Để đảm bảo giao hàng chính xác, vui lòng nhập địa chỉ chi tiết: số nhà, tên đường, phường/xã hoặc tên một địa danh.</span>
+            </div>
+            <div className="hint-item">
+              <span className="hint-icon">📍</span>
+              <span>Ví dụ: "40 Ngô Đức Kế, Phường Sài Gòn", "UBND Tp. Hồ Chí Minh"</span>
+            </div>
+          </div>
         </div>
       </div>
-
 
       <div className="section">
         <h3 className="section-title">💳 Phương thức thanh toán</h3>
@@ -492,7 +538,6 @@ const ThanhToan = () => {
             </label>
           </div>
 
-      
           {phuongThucThanhToan === "VNPAY" && (
             <div className="vnpay-options">
               <div className="bank-selection">
@@ -523,14 +568,13 @@ const ThanhToan = () => {
         </div>
       </div>
 
-
       <div className="section">
         <h3 className="section-title">📝 Ghi chú đơn hàng</h3>
         <div className="note-section">
           <textarea
             value={ghiChu}
             onChange={(e) => setGhiChu(e.target.value)}
-            placeholder="Nhập ghi chú cho đơn hàng (nếu có)..."
+            placeholder="Nhập ghi chú cho đơn hàng (nếu có)... Ví dụ: hướng dẫn đến địa chỉ, yêu cầu đặc biệt..."
             className="note-textarea"
             maxLength={500}
             rows={4}
@@ -538,9 +582,34 @@ const ThanhToan = () => {
         </div>
       </div>
 
+      {/* Thêm section thông tin phí ship */}
       <div className="section">
-        <h3 className="section-title">📦 Thông tin giao hàng</h3>
+        <h3 className="section-title">🚚 Thông tin giao hàng & Phí ship</h3>
         <div className="delivery-info">
+          <div className="shipping-fee-info">
+            {phiShip === 0 ? (
+              <div className="free-shipping">
+                <span className="shipping-icon">🎉</span>
+                <div className="shipping-details">
+                  <div className="shipping-status">MIỄN PHÍ GIAO HÀNG</div>
+                  <div className="shipping-condition">
+                    Đơn hàng từ {MIEN_PHI_SHIP_TU.toLocaleString()}₫ được miễn phí ship!
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="paid-shipping">
+                <span className="shipping-icon">📦</span>
+                <div className="shipping-details">
+                  <div className="shipping-fee">Phí giao hàng: {phiShip.toLocaleString()}₫</div>
+                  <div className="shipping-promotion">
+                    💡 Mua thêm {(MIEN_PHI_SHIP_TU - (tongTienGoc - giamGia)).toLocaleString()}₫ để MIỄN PHÍ SHIP!
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
           <div className="delivery-note">
             <div className="note-item">
               <span className="note-icon">🚚</span>
@@ -554,11 +623,14 @@ const ThanhToan = () => {
               <span className="note-icon">💡</span>
               <span>Khoảng cách và thời gian giao hàng sẽ được tính toán khi đặt hàng</span>
             </div>
+            <div className="note-item">
+              <span className="note-icon">📱</span>
+              <span>Shipper sẽ liên hệ trước khi giao hàng nếu cần hướng dẫn thêm</span>
+            </div>
           </div>
         </div>
       </div>
 
-    
       <div className="section">
         <h3 className="section-title">🎫 Mã giảm giá</h3>
         <div className="voucher-section">
@@ -606,7 +678,6 @@ const ThanhToan = () => {
         </div>
       </div>
 
-    
       <div className="section">
         <div className="total-section">
           <div className="total-row">
@@ -621,10 +692,23 @@ const ThanhToan = () => {
             </div>
           )}
           
+          <div className="total-row shipping">
+            <span>Phí giao hàng:</span>
+            <span className={phiShip === 0 ? "free-shipping-text" : "shipping-fee-text"}>
+              {phiShip === 0 ? "Miễn phí" : `${phiShip.toLocaleString()}₫`}
+            </span>
+          </div>
+          
           <div className="total-row final-total">
             <span>Tổng cộng:</span>
-            <span>{tongTienCuoi.toLocaleString()}₫</span>
+            <span>{tongTienThanhToan.toLocaleString()}₫</span>
           </div>
+          
+          {phiShip > 0 && (
+            <div className="shipping-promotion-note">
+              💡 Mua thêm {(MIEN_PHI_SHIP_TU - (tongTienGoc - giamGia)).toLocaleString()}₫ để được miễn phí giao hàng!
+            </div>
+          )}
         </div>
 
         <div className="action-buttons">
