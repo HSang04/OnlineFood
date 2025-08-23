@@ -204,32 +204,62 @@ const QuanLyDonHang = () => {
     }
   };
 
-  const handleViewInvoice = async (orderId) => {
-    try {
-      setLoadingInvoice(prev => ({ ...prev, [orderId]: true }));
-      
-      const response = await axios.get(`/hoa-don/don-hang/${orderId}`, {
-        headers: {
-          Authorization: `Bearer ${jwt}`,
-        },
-      });
-      
-      if (response.data) {
-        navigate(`/hoa-don/${orderId}`);
-      } else {
-        alert("Hóa đơn chưa được tạo cho đơn hàng này!");
-      }
-    } catch (err) {
-      console.error("Lỗi khi kiểm tra hóa đơn:", err);
-      if (err.response?.status === 404) {
-        alert("Hóa đơn chưa được tạo cho đơn hàng này!");
-      } else {
-        alert("Không thể truy cập hóa đơn. Vui lòng thử lại!");
-      }
-    } finally {
-      setLoadingInvoice(prev => ({ ...prev, [orderId]: false }));
+const handleViewInvoice = async (orderId) => {
+  try {
+    setLoadingInvoice(prev => ({ ...prev, [orderId]: true }));
+    
+    
+    const vaiTro = localStorage.getItem("vaiTro");
+    
+    const headers = {
+      Authorization: `Bearer ${jwt}`,
+      'User-Email': 'admin@system.com', 
+      'User-Role': vaiTro
+    };
+    
+    const response = await axios.get(`/hoa-don/don-hang/${orderId}`, {
+      headers: headers,
+    });
+    
+    if (response.data) {
+      navigate(`/hoa-don/${orderId}`);
+    } else {
+      alert("Hóa đơn chưa được tạo cho đơn hàng này!");
     }
-  };
+  } catch (err) {
+    console.error("Lỗi khi kiểm tra hóa đơn:", err);
+    if (err.response?.status === 404) {
+     
+      try {
+        const createResponse = await axios.post(`/hoa-don/tao-tu-don-hang/${orderId}`, {}, {
+          headers: {
+            Authorization: `Bearer ${jwt}`,
+          },
+        });
+        
+        if (createResponse.data) {
+          console.log("Đã tạo hóa đơn COD cho đơn hàng:", orderId);
+          navigate(`/hoa-don/${orderId}`);
+        }
+      } catch (createErr) {
+        console.error("Lỗi khi tạo hóa đơn:", createErr);
+        if (createErr.response?.data?.message) {
+          alert(createErr.response.data.message);
+        } else {
+          alert("Không thể tạo hóa đơn. Vui lòng thử lại!");
+        }
+      }
+    } else if (err.response?.status === 401) {
+      alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại!");
+    } else if (err.response?.status === 403) {
+      alert("Bạn không có quyền xem hóa đơn này!");
+    } else {
+      alert("Không thể truy cập hóa đơn. Vui lòng thử lại!");
+    }
+  } finally {
+    setLoadingInvoice(prev => ({ ...prev, [orderId]: false }));
+  }
+};
 
   const normalizeStatus = (status) => {
     const statusMap = {

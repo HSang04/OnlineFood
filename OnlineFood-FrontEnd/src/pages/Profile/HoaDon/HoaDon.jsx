@@ -17,6 +17,8 @@ const HoaDon = () => {
         const jwt = localStorage.getItem('jwt');
         const vaiTro = localStorage.getItem('vaiTro');
         const idNguoiDung = localStorage.getItem('idNguoiDung');
+
+        console.log('Debug - Role:', vaiTro);
         
         if (!jwt || !idNguoiDung) {
           setError('Vui lòng đăng nhập để xem hóa đơn');

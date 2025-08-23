@@ -29,47 +29,63 @@ public class HoaDonController {
                 .orElse(ResponseEntity.notFound().build());
     }
     
-    @GetMapping("/don-hang/{donHangId}")
-    public ResponseEntity<?> getByDonHangId(
-            @PathVariable Long donHangId,
-            @RequestHeader(value = "User-Email", required = false) String userEmail,
-            @RequestHeader(value = "User-Role", required = false) String userRole) {
-        
-        try {
-            // Kiểm tra quyền truy cập
-            if (userEmail == null || userEmail.trim().isEmpty()) {
-                return ResponseEntity.status(401).body(Map.of(
-                    "success", false,
-                    "message", "Thiếu thông tin email người dùng"
-                ));
-            }
-            
-            // Admin và Quản lý có thể xem tất cả hóa đơn
-            boolean isAdminOrManager = "ADMIN".equals(userRole) || "QUANLY".equals(userRole);
-            
-            HoaDon hoaDon = hoaDonService.getByDonHangIdWithEmailCheck(donHangId, userEmail, isAdminOrManager);
-            
+  @GetMapping("/don-hang/{donHangId}")
+public ResponseEntity<?> getByDonHangId(
+        @PathVariable Long donHangId,
+        @RequestHeader(value = "User-Email", required = false) String userEmail,
+        @RequestHeader(value = "User-Role", required = false) String userRole) {
+
+    try {
+        // Các role được xem tất cả hóa đơn
+        boolean canViewAllInvoices = "ADMIN".equals(userRole) || 
+                                   "QUANLY".equals(userRole) || 
+                                   "NHANVIEN_QUANLYDONHANG".equals(userRole);
+
+        // NHANVIEN_QUANLYMONAN không được xem hóa đơn
+        if ("NHANVIEN_QUANLYMONAN".equals(userRole)) {
+            return ResponseEntity.status(403).body(Map.of(
+                "success", false,
+                "message", "Bạn không có quyền xem hóa đơn"
+            ));
+        }
+
+        // Nếu là Admin/Quản lý thì không cần kiểm tra email
+        if (canViewAllInvoices) {
+            HoaDon hoaDon = hoaDonService.getByDonHangIdWithEmailCheck(donHangId, "admin@system.com", true);
             if (hoaDon == null) {
                 return ResponseEntity.notFound().build();
             }
-            
             return ResponseEntity.ok(hoaDon);
-            
-        } catch (SecurityException e) {
-          
-            return ResponseEntity.status(403).body(Map.of(
+        }
+
+        // Chỉ kiểm tra email cho user thường
+        if (userEmail == null || userEmail.trim().isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of(
                 "success", false,
-                "message", e.getMessage()
-            ));
-        } catch (Exception e) {
-            // Lỗi khác
-            return ResponseEntity.status(500).body(Map.of(
-                "success", false,
-                "message", "Có lỗi xảy ra khi tải hóa đơn: " + e.getMessage()
+                "message", "Thiếu thông tin email người dùng"
             ));
         }
+
+        HoaDon hoaDon = hoaDonService.getByDonHangIdWithEmailCheck(donHangId, userEmail, false);
+
+        if (hoaDon == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(hoaDon);
+
+    } catch (SecurityException e) {
+        return ResponseEntity.status(403).body(Map.of(
+            "success", false,
+            "message", e.getMessage()
+        ));
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body(Map.of(
+            "success", false,
+            "message", "Có lỗi xảy ra khi tải hóa đơn: " + e.getMessage()
+        ));
     }
-    
+}
     /**
      * Tạo hóa đơn từ đơn hàng (dùng cho COD)
      */

@@ -50,7 +50,8 @@
       (HUYNH_SANG_XIN_CHAO) bị lấn sang thông tin khác
       Bảo mật các trang quản lý của admin
       Kiểm tra các trang của user khi chưa đăng nhập sẽ thế nào
-	admin cần có quyền xem hóa đơn tại quản lý đơn hàng
+	admin cần có quyền xem hóa đơn tại quản lý đơn hàng ( Đã fix )
 	Hóa đơn số 32 đang bị sai giá tiền tạm tính. ( cần check lại logic )
 	Cần có thêm Quản lý giao dịch 
 	Chỗ thanh toán chỉ cần 1 là tiền mặt, 2 là ví điện tử, không cần select box
+24/8 : Không cho xem hóa đơn bằng api/hoa-don/id nữa
