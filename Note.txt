@@ -42,7 +42,7 @@
 18/8 : Cần thêm hiển thị số lượng Đã bán của món ăn  ( Đã làm )
 20/8 : Cần phân trang Quản lý Đơn hàng 
 
-21/8 : Thêm đường vào chỗ Chat
+21/8 : Thêm đường vào chỗ Chat ( Đã làm )
        Hiện thông tin về nhân viên reply ( Đã làm )
 22/8: Menu mặc định hiện theo giảm giá % 
       Biểu đồ nên hiện thêm danh sách màu gì, sản phẩm gì bên góc bên ngoài biểu đồ tròn
@@ -51,7 +51,9 @@
       Bảo mật các trang quản lý của admin
       Kiểm tra các trang của user khi chưa đăng nhập sẽ thế nào
 	admin cần có quyền xem hóa đơn tại quản lý đơn hàng ( Đã fix )
-	Hóa đơn số 32 đang bị sai giá tiền tạm tính. ( cần check lại logic )
+	Hóa đơn số 32 đang bị sai giá tiền tạm tính. ( cần check lại logic ) ( đã fix )
+	Hóa đơn 31 ( có vấn đề )
 	Cần có thêm Quản lý giao dịch 
 	Chỗ thanh toán chỉ cần 1 là tiền mặt, 2 là ví điện tử, không cần select box
 24/8 : Không cho xem hóa đơn bằng api/hoa-don/id nữa
+       Thống kê Voucher đang bị sai( tổng tiền giảm bị lỗi, TIEN_MAT thì lấy nguyên giá, còn PHAN_TRAM thì tính theo % tổng tiền hiện tại ) 

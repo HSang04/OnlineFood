@@ -9,7 +9,7 @@ const MenuMonAn = () => {
   const [dsDanhMuc, setDsDanhMuc] = useState([]);
   const [keyword, setKeyword] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [sortBy, setSortBy] = useState("");
+  const [sortBy, setSortBy] = useState("khuyen-mai"); // Mặc định sắp xếp theo khuyến mãi
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
@@ -110,7 +110,10 @@ const MenuMonAn = () => {
           case "gia-giam":
             return b.giaKhuyenMai - a.giaKhuyenMai;
           case "khuyen-mai":
-            return b.coKhuyenMai - a.coKhuyenMai;
+            // Sắp xếp ưu tiên món có khuyến mãi và phần trăm giảm giá cao nhất
+            const aPromoScore = a.coKhuyenMai ? (a.phanTramGiamGia || 0) : -1;
+            const bPromoScore = b.coKhuyenMai ? (b.phanTramGiamGia || 0) : -1;
+            return bPromoScore - aPromoScore;
           case "rating-cao":
             return (b.thongKeDanhGia?.diemTrungBinh || 0) - (a.thongKeDanhGia?.diemTrungBinh || 0);
           case "ban-chay":
@@ -150,7 +153,7 @@ const MenuMonAn = () => {
   const resetFilter = () => {
     setKeyword("");
     setSelectedCategory("");
-    setSortBy("");
+    setSortBy("khuyen-mai"); // Reset về mặc định là khuyến mãi
     setCurrentPage(1);
     // Cuộn lên đầu trang khi reset filter
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -252,14 +255,14 @@ const MenuMonAn = () => {
                 className="sort-select"
               >
                 <option value="">Sắp xếp theo</option>
+                <option value="khuyen-mai">Khuyến mãi hot</option>
                 <option value="gia-tang">Giá: Thấp đến cao</option>
                 <option value="gia-giam">Giá: Cao đến thấp</option>
-                <option value="khuyen-mai">Khuyến mãi hot</option>
                 <option value="rating-cao">Đánh giá cao nhất</option>
                 <option value="ban-chay">Bán chạy nhất</option>
               </select>
 
-              {(selectedCategory || sortBy || keyword) && (
+              {(selectedCategory || sortBy !== "khuyen-mai" || keyword) && (
                 <button onClick={resetFilter} className="reset-btn">
                   <i className="fas fa-times"></i>
                   Đặt lại bộ lọc
@@ -322,6 +325,12 @@ const MenuMonAn = () => {
                   {dsMonAn.filter(mon => mon.coKhuyenMai).length > 0 && (
                     <span className="promotion-count">
                       • {dsMonAn.filter(mon => mon.coKhuyenMai).length} món đang có khuyến mãi
+                    </span>
+                  )}
+                  {/* Thêm thông báo về sắp xếp mặc định */}
+                  {sortBy === "khuyen-mai" && (
+                    <span className="default-sort-info">
+                      • Ưu tiên hiển thị khuyến mãi hot nhất
                     </span>
                   )}
                 </div>

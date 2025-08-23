@@ -104,7 +104,7 @@ public class HoaDonService {
             hoaDon.setSoDienThoai(nguoiDung.getSoDienThoai());
             
             Double tongTien = donHang.getTongTien();
-            if (tongTien == null || tongTien <= 0) {
+            if (tongTien == null || tongTien < 0) {
                 throw new RuntimeException("Tổng tiền đơn hàng không hợp lệ: " + tongTien);
             }
             hoaDon.setTongTien(tongTien); 
@@ -158,7 +158,7 @@ public class HoaDonService {
             hd.setTrangThai(newHoaDon.getTrangThai());
             hd.setMaGD(newHoaDon.getMaGD());
             
-            if (newHoaDon.getTongTien() != null && newHoaDon.getTongTien() > 0) {
+            if (newHoaDon.getTongTien() != null && newHoaDon.getTongTien() >= 0) {
                 hd.setTongTien(newHoaDon.getTongTien());
             }
             

@@ -15,6 +15,7 @@ const Header = () => {
   const handleLogout = () => {
     localStorage.removeItem('jwt');
     localStorage.removeItem('vaiTro');
+    localStorage.removeItem('idNguoiDung');
     navigate('/login');
   };
 
@@ -165,6 +166,7 @@ const Header = () => {
             <li className="nav-item"><Link className="nav-link nav-hover" to="/menu">Thực đơn</Link></li>
             {renderDropdown(dropdownItemsAdmin)}
             <li className="nav-item"><Link className="nav-link nav-hover" to="/thong-ke">Thống kê doanh thu</Link></li>
+            <li className="nav-item"><Link className="nav-link nav-hover" to="/chat">Tin nhắn</Link></li>
             <li className="nav-item"><Link className="nav-link nav-hover" to="/profile">Hồ sơ</Link></li>
             <li className="nav-item"><span className="nav-link nav-hover logout-btn" onClick={handleLogout}>Đăng xuất</span></li>
           </>
@@ -175,6 +177,7 @@ const Header = () => {
           <>
             <li className="nav-item"><Link className="nav-link nav-hover" to="/menu">Thực đơn</Link></li>
             {renderDropdown(dropdownItemsAdmin)}
+            <li className="nav-item"><Link className="nav-link nav-hover" to="/chat">Tin nhắn</Link></li>
             <li className="nav-item"><Link className="nav-link nav-hover" to="/profile">Hồ sơ</Link></li>
             <li className="nav-item"><span className="nav-link nav-hover logout-btn" onClick={handleLogout}>Đăng xuất</span></li>
           </>
@@ -207,6 +210,7 @@ const Header = () => {
             <li className="nav-item"><Link className="nav-link nav-hover" to="/menu">Thực đơn</Link></li>
             <li className="nav-item"><Link className="nav-link nav-hover" to="/cart">Giỏ hàng</Link></li>
             <li className="nav-item"><Link className="nav-link nav-hover" to="/lich-su-giao-dich">Lịch sử giao dịch</Link></li>
+            <li className="nav-item"><Link className="nav-link nav-hover" to="/chat">Liên hệ hỗ trợ</Link></li>
             <li className="nav-item"><Link className="nav-link nav-hover" to="/profile">Hồ sơ</Link></li>
             <li className="nav-item"><span className="nav-link nav-hover logout-btn" onClick={handleLogout}>Đăng xuất</span></li>
           </>

@@ -119,18 +119,19 @@ const HoaDon = () => {
     return item.donGia * item.soLuong;
   };
 
-  const calculateGiamGia = () => {
-    if (!hoaDon?.donHang?.chiTietDonHang) return 0;
-    
-    let tongGiaGoc = 0;
-    hoaDon.donHang.chiTietDonHang.forEach(item => {
-      const giaGoc = item.monAn?.gia || 0;
-      tongGiaGoc += giaGoc * item.soLuong;
-    });
-    
-    return tongGiaGoc - hoaDon.tongTien;
-  };
 
+  const calculateVoucherDiscount = (voucher, tongTienGoc) => {
+    if (!voucher || !tongTienGoc) return 0;
+    if (voucher.loai === 'PHAN_TRAM') {
+      const discountAmount = (tongTienGoc * voucher.giaTri) / 100;
+      return Math.round(discountAmount);
+    } else if (voucher.loai === 'TIEN_MAT') {
+     
+      return Math.min(voucher.giaTri, tongTienGoc);
+    }
+    
+    return 0;
+  };
 
   if (loading) return <div className="loading">Đang tải hóa đơn...</div>;
   
@@ -193,7 +194,16 @@ const HoaDon = () => {
   
   if (!hoaDon) return <div className="error">📋 Không tìm thấy hóa đơn</div>;
 
-  const giamGia = calculateGiamGia();
+  // Tính toán các giá trị cần thiết
+  const tongTienGoc = hoaDon.donHang.chiTietDonHang?.reduce((sum, item) => {
+    return sum + calculateThanhTien(item);
+  }, 0) || 0;
+
+  const voucherDiscount = hoaDon.donHang.voucher 
+    ? calculateVoucherDiscount(hoaDon.donHang.voucher, tongTienGoc)
+    : 0;
+
+  const tongTienSauGiamGia = tongTienGoc - voucherDiscount;
 
   return (
     <div className="hoa-don-container">
@@ -269,20 +279,55 @@ const HoaDon = () => {
           </table>
         </div>
 
-        <div className="total-section">
-          <div className="detail-row">
-            <span>Tạm tính:</span>
-            <span>{(hoaDon.tongTien + giamGia).toLocaleString()}₫</span>
-          </div>
-          {giamGia > 0 && (
+        {/* Thêm phần hiển thị thông tin voucher nếu có */}
+        {hoaDon.donHang.voucher && (
+          <div className="invoice-details voucher-section">
+            <h4>🎫 Thông tin voucher đã sử dụng</h4>
             <div className="detail-row">
-              <span>Giảm giá:</span>
-              <span style={{ color: '#e74c3c' }}>-{giamGia.toLocaleString()}₫</span>
+              <span>Mã voucher:</span>
+              <span className="voucher-code">{hoaDon.donHang.voucher.maVoucher}</span>
+            </div>
+            {hoaDon.donHang.voucher.moTa && (
+              <div className="detail-row">
+                <span>Mô tả:</span>
+                <span>{hoaDon.donHang.voucher.moTa}</span>
+              </div>
+            )}
+            <div className="detail-row">
+              <span>Loại giảm giá:</span>
+              <span>
+                {hoaDon.donHang.voucher.loai === 'PHAN_TRAM' 
+                  ? `${hoaDon.donHang.voucher.giaTri}%` 
+                  : `${hoaDon.donHang.voucher.giaTri?.toLocaleString()}₫`}
+              </span>
+            </div>
+            <div className="detail-row voucher-discount">
+              <span>Số tiền được giảm:</span>
+              <span>-{voucherDiscount.toLocaleString()}₫</span>
+            </div>
+          </div>
+        )}
+
+        <div className="total-section">
+          {/* Hiển thị tổng tiền gốc nếu có voucher */}
+          {hoaDon.donHang.voucher && (
+            <div className="detail-row">
+              <span>Tạm tính:</span>
+              <span>{tongTienGoc.toLocaleString()}₫</span>
             </div>
           )}
+          
+          {/* Hiển thị giảm giá nếu có voucher */}
+          {hoaDon.donHang.voucher && voucherDiscount > 0 && (
+            <div className="detail-row discount-row">
+              <span>Giảm giá voucher:</span>
+              <span className="discount-amount">-{voucherDiscount.toLocaleString()}₫</span>
+            </div>
+          )}
+          
           <div className="detail-row total-amount">
             <span> Tổng tiền thanh toán:</span>
-            <span>{hoaDon.tongTien.toLocaleString()}₫</span>
+            <span>{tongTienSauGiamGia.toLocaleString()}₫</span>
           </div>
           <div className="detail-row">
             <span>Trạng thái thanh toán:</span>
@@ -293,9 +338,23 @@ const HoaDon = () => {
             <span>{formatDate(hoaDon.thoiGianThanhToan)}</span>
           </div>
         </div>
+
+       
+        {tongTienSauGiamGia < 200000 && (
+          <div className="shipping-note">
+            <div className="note-header">📦 Thông tin giao hàng</div>
+            <div className="note-content">
+              <p><strong>Phí giao hàng:</strong> 30.000₫ </p>
+              <p><em>* Phí giao hàng không bao gồm trong hóa đơn này.</em></p>
+            </div>
+          </div>
+        )}
      
         <div className="invoice-footer">
           <p><strong>Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</strong></p>
+          {hoaDon.donHang.voucher && voucherDiscount > 0 && (
+            <p><em>🎉 Bạn đã tiết kiệm được {voucherDiscount.toLocaleString()}₫ với voucher {hoaDon.donHang.voucher.maVoucher}!</em></p>
+          )}
           <p>Hóa đơn được tạo tự động bởi hệ thống - {new Date().toLocaleString('vi-VN')}</p>
         </div>
 
