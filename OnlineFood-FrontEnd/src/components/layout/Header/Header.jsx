@@ -141,6 +141,7 @@ const Header = () => {
       ['/quan-ly-nguoi-dung', 'Quản lý người dùng'],
       ['/quan-ly-voucher', 'Quản lý voucher'],
       ['/quan-ly-giao-dich', 'Quản lý giao dịch'],
+       ['/quan-ly-thong-tin', 'Quản lý thông tin cửa hàng'],
     ];
 
     const dropdownItemsMonAn = [

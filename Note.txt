@@ -44,7 +44,7 @@
 
 21/8 : Thêm đường vào chỗ Chat ( Đã làm )
        Hiện thông tin về nhân viên reply ( Đã làm )
-22/8: Menu mặc định hiện theo giảm giá % 
+22/8: Menu mặc định hiện theo giảm giá % ( đã làm )
       Biểu đồ nên hiện thêm danh sách màu gì, sản phẩm gì bên góc bên ngoài biểu đồ tròn
 23/8 : Fix Thống kê voucher hiện thêm thông tin Voucher
       (HUYNH_SANG_XIN_CHAO) bị lấn sang thông tin khác
@@ -57,3 +57,13 @@
 	Chỗ thanh toán chỉ cần 1 là tiền mặt, 2 là ví điện tử, không cần select box
 24/8 : Không cho xem hóa đơn bằng api/hoa-don/id nữa
        Thống kê Voucher đang bị sai( tổng tiền giảm bị lỗi, TIEN_MAT thì lấy nguyên giá, còn PHAN_TRAM thì tính theo % tổng tiền hiện tại ) 
+25/8 : Trang chủ cần giới thiệu nhà hàng
+	Ảnh món ăn ở chi tiết món ăn bị phóng to => cần thu nhỏ lại
+	Cần thêm thời gian mở cửa, đóng cửa nhà hàng ( ngoài thời gian này khộng cho phép đặt đơn )  ( ĐÃ LÀM )
+	Fix số lượng khi mở chi tiết món ăn ( reset về 1 khi sang trang mới )
+	Admin không xem đơn hàng
+	Xóa danh mục => thông báo xóa không được 
+	Thông báo tin nhắn mới bên admin
+	Hiện top bán chạy ở Menu thực đơn
+	Để SELECT BOX năm trong "Doanh thu theo tháng" còn lại k cần
+	Bỏ vô hiệu hóa tài khoản từ người dùng

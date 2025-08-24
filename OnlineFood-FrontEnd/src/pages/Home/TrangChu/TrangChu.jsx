@@ -148,7 +148,7 @@ const TrangChu = () => {
         </div>
       </section>
 
-      {/* Stats */}
+      {/* Stats
       <section className="stats">
         <div className="container">
           <div className="stats-grid">
@@ -170,7 +170,7 @@ const TrangChu = () => {
             </div>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Testimonials */}
       <section className="testimonials">

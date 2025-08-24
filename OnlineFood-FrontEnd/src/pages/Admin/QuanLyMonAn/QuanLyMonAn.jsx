@@ -137,7 +137,7 @@ const QuanLyMonAn = () => {
       <table className="monan-table">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>STT</th>
             <th>Tên món</th>
             <th>Danh mục</th>
             <th>Ảnh</th>

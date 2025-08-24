@@ -16,11 +16,16 @@ const GioHang = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updatingItems, setUpdatingItems] = useState(new Set()); 
+  const [cuaHangStatus, setCuaHangStatus] = useState(null);
+  const [cuaHangInfo, setCuaHangInfo] = useState(null); 
 
   const nguoiDungId = localStorage.getItem("idNguoiDung");
   const debounceTimers = useRef({}); 
 
-  // Tính giá thực tế cho món ăn (giống như ThanhToan)
+  const getAuthToken = () => {
+    return localStorage.getItem('jwt') || sessionStorage.getItem('jwt');
+  };
+
   const tinhGiaThucTe = (monAn) => {
     if (monAn?.khuyenMai?.giaGiam && monAn.khuyenMai.giaGiam > 0) {
       return monAn.khuyenMai.giaGiam;
@@ -40,6 +45,71 @@ const GioHang = () => {
     };
   }, []);
 
+  const fetchCuaHangInfo = useCallback(async () => {
+    try {
+      const jwt = getAuthToken();
+      const response = await axios.get('/thong-tin-cua-hang', {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+        },
+      });
+      setCuaHangInfo(response.data);
+      return response.data;
+    } catch (err) {
+      console.error('Lỗi khi lấy thông tin cửa hàng:', err);
+      return null;
+    }
+  }, []);
+
+  
+  const checkCuaHangStatus = useCallback(async () => {
+    try {
+      const jwt = getAuthToken();
+      const response = await axios.get('/thong-tin-cua-hang/check-mo', {
+        headers: {
+          Authorization: `Bearer ${jwt}`,
+        },
+      });
+      setCuaHangStatus(response.data);
+    } catch (err) {
+      console.error("Lỗi khi kiểm tra trạng thái cửa hàng:", err);
+      
+   
+      if (cuaHangInfo?.gioMoCua && cuaHangInfo?.gioDongCua) {
+        const currentTime = new Date();
+        const currentHour = currentTime.getHours();
+        const currentMinute = currentTime.getMinutes();
+        const currentTimeMinutes = currentHour * 60 + currentMinute;
+        
+        const [openHour, openMinute] = cuaHangInfo.gioMoCua.split(':').map(Number);
+        const [closeHour, closeMinute] = cuaHangInfo.gioDongCua.split(':').map(Number);
+        const openTimeMinutes = openHour * 60 + openMinute;
+        const closeTimeMinutes = closeHour * 60 + closeMinute;
+        
+        const isOpen = currentTimeMinutes >= openTimeMinutes && currentTimeMinutes < closeTimeMinutes;
+
+        setCuaHangStatus({
+          isOpen: isOpen,
+          isMo: isOpen,
+          thongTin: isOpen ? 
+            `Đang mở cửa - Đóng cửa lúc ${cuaHangInfo.gioDongCua.substring(0, 5)}` : 
+            `Đã đóng cửa - Mở cửa từ ${cuaHangInfo.gioMoCua.substring(0, 5)} đến ${cuaHangInfo.gioDongCua.substring(0, 5)}`,
+          gioMoCua: cuaHangInfo.gioMoCua,
+          gioDongCua: cuaHangInfo.gioDongCua
+        });
+      } else {
+     
+        setCuaHangStatus({
+          isOpen: false,
+          isMo: false,
+          thongTin: 'Không thể xác định trạng thái cửa hàng',
+          gioMoCua: null,
+          gioDongCua: null
+        });
+      }
+    }
+  }, [cuaHangInfo?.gioMoCua, cuaHangInfo?.gioDongCua]);
+
   const fetchGioHang = useCallback(async (silent = false) => {
     try {
       if (!silent) setLoading(true);
@@ -47,7 +117,6 @@ const GioHang = () => {
       const gioHangRes = await axios.get(`/gio-hang/${nguoiDungId}`);
       const gioHangData = Array.isArray(gioHangRes.data) ? gioHangRes.data : [];
       
-    
       const processedData = gioHangData.map(item => ({
         ...item,
         id: item.id || `${item.monAnId}-${Date.now()}`, 
@@ -124,8 +193,28 @@ const GioHang = () => {
       setLoading(false);
       return;
     }
-    fetchGioHang();
-  }, [nguoiDungId, fetchGioHang]);
+    
+    const initData = async () => {
+      const cuaHangData = await fetchCuaHangInfo();
+      setCuaHangInfo(cuaHangData);
+      await fetchGioHang();
+    };
+    
+    initData();
+  }, [nguoiDungId, fetchCuaHangInfo, fetchGioHang]);
+
+  useEffect(() => {
+    if (cuaHangInfo) {
+      checkCuaHangStatus();
+      
+      // Kiểm tra trạng thái cửa hàng mỗi 1 phút
+      const statusInterval = setInterval(() => {
+        checkCuaHangStatus();
+      }, 60000); // 1 phút = 60000ms
+      
+      return () => clearInterval(statusInterval);
+    }
+  }, [cuaHangInfo, checkCuaHangStatus]);
 
   const handleRemove = async (id) => {
     const itemToRemove = gioHang.find(item => item.id === id);
@@ -192,6 +281,13 @@ const GioHang = () => {
   };
 
   const handleDatHang = () => {
+    // Kiểm tra trạng thái cửa hàng trước (sử dụng cả isOpen và isMo để tương thích)
+    const isStoreOpen = cuaHangStatus?.isOpen || cuaHangStatus?.isMo;
+    if (cuaHangStatus && !isStoreOpen) {
+      alert(`Không thể đặt hàng!\n${cuaHangStatus.thongTin}`);
+      return;
+    }
+
     // Validate dữ liệu trước khi chuyển trang
     if (!gioHang || gioHang.length === 0) {
       alert("Giỏ hàng trống, không thể đặt hàng");
@@ -262,9 +358,30 @@ const GioHang = () => {
     );
   }
 
+  // Kiểm tra trạng thái cửa hàng (tương thích với cả isOpen và isMo)
+  const isStoreOpen = cuaHangStatus?.isOpen || cuaHangStatus?.isMo;
+
   return (
     <div className="gio-hang-container">
       <h2>🛒 Giỏ hàng của bạn</h2>
+
+    
+      {cuaHangStatus && (
+        <div className={`store-status ${isStoreOpen ? 'open' : 'closed'}`}>
+          <div className="status-indicator">
+            <span className={`status-dot ${isStoreOpen ? 'open' : 'closed'}`}></span>
+            <span className="status-text">
+              {isStoreOpen ? ' Cửa hàng đang mở' : ' Cửa hàng đã đóng'}
+            </span>
+          </div>
+          <p className="status-info">{cuaHangStatus.thongTin}</p>
+          {!isStoreOpen && (
+            <p className="order-warning">
+              ⚠️ Không thể đặt hàng ngoài giờ hoạt động của cửa hàng
+            </p>
+          )}
+        </div>
+      )}
 
       {gioHang.length === 0 ? (
         <div className="gio-hang-empty">
@@ -426,7 +543,7 @@ const GioHang = () => {
                   <span className="so-tien-tong">
                     {thongKe.tongTien.toLocaleString()}₫
                   </span>
-                </div>
+                  </div>
               </div>
               
               <div className="action-buttons">
@@ -438,11 +555,15 @@ const GioHang = () => {
                   Xóa tất cả
                 </button>
                 <button 
-                  className="btn-dat-hang" 
+                  className={`btn-dat-hang ${!isStoreOpen ? 'disabled' : ''}`}
                   onClick={handleDatHang}
-                  disabled={gioHang.length === 0}
+                  disabled={gioHang.length === 0 || !isStoreOpen}
+                  title={!isStoreOpen ? 'Cửa hàng đã đóng, không thể đặt hàng' : ''}
                 >
-                  Đặt hàng ({thongKe.soLuongMonAn} món)
+                  {!isStoreOpen ? 
+                    `🔒 Cửa hàng đã đóng` : 
+                    `Đặt hàng (${thongKe.soLuongMonAn} món)`
+                  }
                 </button>
               </div>
             </div>

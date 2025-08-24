@@ -30,6 +30,7 @@ import HoaDon from './pages/Profile/HoaDon/HoaDon';
 import ThongKe from './pages/Admin/ThongKe/ThongKe';
 
 import TinNhan from './pages/Profile/TinNhan/TinNhan';
+import QuanLyCuaHang from './pages/Admin/QuanLyCuaHang/QuanLyCuaHang';
 
 const App = () => {
   return (
@@ -81,6 +82,8 @@ const App = () => {
           <Route path="/them-sua-mon-an" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
           <Route path="/them-sua-mon-an/:id" element={ <RequireAdmin>  <ThemSuaMonAn /> </RequireAdmin> } />
            <Route path="/thong-ke" element={ <RequireAdmin>  <ThongKe /> </RequireAdmin> } />
+
+           <Route path="/quan-ly-thong-tin" element={ <RequireAdmin>  <QuanLyCuaHang /> </RequireAdmin> } />
           
         </Routes>
       </div>
