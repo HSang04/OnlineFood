@@ -60,7 +60,7 @@
 25/8 : Trang chủ cần giới thiệu nhà hàng
 	Ảnh món ăn ở chi tiết món ăn bị phóng to => cần thu nhỏ lại
 	Cần thêm thời gian mở cửa, đóng cửa nhà hàng ( ngoài thời gian này khộng cho phép đặt đơn )  ( ĐÃ LÀM )
-	Fix số lượng khi mở chi tiết món ăn ( reset về 1 khi sang trang mới )
+	Fix số lượng khi mở chi tiết món ăn ( đã fix )
 	Admin không xem đơn hàng
 	Xóa danh mục => thông báo xóa không được 
 	Thông báo tin nhắn mới bên admin

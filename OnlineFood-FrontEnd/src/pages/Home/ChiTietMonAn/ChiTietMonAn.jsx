@@ -27,13 +27,18 @@ const ChiTietMonAn = () => {
   const idNguoiDung = localStorage.getItem("idNguoiDung");
   const isLoggedIn = !!idNguoiDung;
 
-    useEffect(() => {
-      window.scrollTo({
-        top: 0,
-        left: 0,
-        behavior: 'smooth'
-      });
-    }, []); 
+  // Reset quantity về 1 khi chuyển sang món ăn khác (id thay đổi)
+  useEffect(() => {
+    setQuantity(1);
+    setSelectedImage(0); // Reset selected image về 0 luôn
+    
+    // Scroll lên đầu trang mỗi khi chuyển sang món ăn khác
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'smooth'
+    });
+  }, [id]); 
 
   const fetchChiTietMonAn = useCallback(async () => {
     setLoading(true);
@@ -442,7 +447,7 @@ const ChiTietMonAn = () => {
           </div>
         )}
 
-        {/* My Review Section */}
+      
         {isLoggedIn && (
           <div className="my-review-section">
             {danhGiaCuaToi ? (
@@ -541,7 +546,7 @@ const ChiTietMonAn = () => {
           </div>
         )}
 
-        {/* Reviews List */}
+       
         <div className="reviews-list-section">
           <div className="reviews-controls">
             <label htmlFor="sortSelect">Sắp xếp theo:</label>
@@ -667,7 +672,7 @@ const ChiTietMonAn = () => {
         </div>
       )}
 
-      {/* Back to Menu */}
+    
       <div className="back-to-menu">
         <button 
           onClick={() => navigate('/menu')} 
